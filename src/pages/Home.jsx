@@ -1,0 +1,570 @@
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { 
+  Container, 
+  Grid, 
+  Typography, 
+  Box, 
+  Card, 
+  CardContent, 
+  CardMedia, 
+  CardActionArea,
+  Chip,
+  Pagination,
+  CircularProgress,
+  Rating,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  useMediaQuery,
+  Paper,
+  Button,
+  Skeleton
+} from '@mui/material';
+import { useTheme, alpha } from '@mui/material/styles';
+import { 
+  Theaters as TheatersIcon,
+  TrendingUp as TrendingUpIcon,
+  Favorite as FavoriteIcon,
+  LocalFireDepartment as HotIcon
+} from '@mui/icons-material';
+import { 
+  getTrendingMovies, 
+  searchMovies, 
+  getPopularMovies,
+  getMoviesByGenre,
+  getGenres 
+} from '../utils/tmdbApi';
+
+const Home = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [movies, setMovies] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [genres, setGenres] = useState([]);
+  const [featuredMovie, setFeaturedMovie] = useState(null);
+  const [featuredLoading, setFeaturedLoading] = useState(true);
+  
+  const searchQuery = searchParams.get('search') || '';
+  const filterParam = searchParams.get('filter') || '';
+  const genreParam = searchParams.get('genre') || '';
+
+  // Fetch genres on component mount
+  useEffect(() => {
+    const fetchGenres = async () => {
+      try {
+        const genreList = await getGenres();
+        setGenres(genreList);
+      } catch (err) {
+        console.error('Error fetching genres:', err);
+      }
+    };
+
+    fetchGenres();
+  }, []);
+
+  // Fetch a featured movie for the hero section
+  useEffect(() => {
+    const fetchFeaturedMovie = async () => {
+      setFeaturedLoading(true);
+      try {
+        // Get trending movies to pick a featured one
+        const trendingData = await getTrendingMovies('day', 1);
+        const featured = trendingData.results[Math.floor(Math.random() * 5)]; // Pick one of the top 5
+        setFeaturedMovie(featured);
+      } catch (err) {
+        console.error('Error fetching featured movie:', err);
+      } finally {
+        setFeaturedLoading(false);
+      }
+    };
+
+    // Only fetch featured movie for homepage (not search or filter pages)
+    if (!searchQuery && !filterParam && !genreParam) {
+      fetchFeaturedMovie();
+    } else {
+      setFeaturedMovie(null);
+      setFeaturedLoading(false);
+    }
+  }, [searchQuery, filterParam, genreParam]);
+
+  // Fetch movies based on parameters
+  useEffect(() => {
+    const fetchMovies = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        let response;
+
+        if (searchQuery) {
+          // Search for movies
+          response = await searchMovies(searchQuery, page);
+        } else if (genreParam) {
+          // Filter by genre
+          response = await getMoviesByGenre(parseInt(genreParam), page);
+        } else {
+          // Default to trending or popular
+          if (filterParam === 'popular') {
+            response = await getPopularMovies(page);
+          } else {
+            // Default to trending
+            response = await getTrendingMovies('week', page);
+          }
+        }
+
+        setMovies(response.results);
+        setTotalPages(Math.min(response.totalPages, 500)); // TMDB API limits to 500 pages
+      } catch (err) {
+        console.error('Error fetching movies:', err);
+        setError('Failed to load movies. Please try again later.');
+        setMovies([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMovies();
+  }, [searchQuery, filterParam, genreParam, page]);
+
+  // Handle page change
+  const handlePageChange = (event, value) => {
+    setPage(value);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Handle filter change
+  const handleFilterChange = (event) => {
+    setPage(1);
+    if (event.target.value === 'trending' || event.target.value === 'popular') {
+      searchParams.delete('genre');
+      searchParams.set('filter', event.target.value);
+    } else {
+      searchParams.delete('filter');
+    }
+    setSearchParams(searchParams);
+  };
+
+  // Handle genre change
+  const handleGenreChange = (event) => {
+    setPage(1);
+    if (event.target.value) {
+      searchParams.delete('filter');
+      searchParams.set('genre', event.target.value);
+    } else {
+      searchParams.delete('genre');
+    }
+    setSearchParams(searchParams);
+  };
+
+  const getPageTitle = () => {
+    if (searchQuery) {
+      return `Search Results: "${searchQuery}"`;
+    } else if (genreParam) {
+      const genre = genres.find(g => g.id === parseInt(genreParam));
+      return `${genre?.name || ''} Movies`;
+    } else if (filterParam === 'popular') {
+      return 'Popular Movies';
+    } else {
+      return 'Trending Movies';
+    }
+  };
+
+  const renderFeaturedMovie = () => {
+    if (featuredLoading) {
+      return (
+        <Box 
+          sx={{ 
+            width: '100%', 
+            height: { xs: 400, md: 500 }, 
+            position: 'relative',
+            mb: 6, 
+            borderRadius: 3,
+            overflow: 'hidden'
+          }}
+        >
+          <Skeleton variant="rectangular" width="100%" height="100%" animation="wave" />
+        </Box>
+      );
+    }
+
+    if (!featuredMovie) return null;
+
+    return (
+      <Paper
+        className="fade-in" 
+        elevation={4}
+        sx={{
+          position: 'relative',
+          width: '100%',
+          height: { xs: 400, md: 500 },
+          mb: 6,
+          borderRadius: 3,
+          overflow: 'hidden',
+          backgroundImage: `linear-gradient(to top, ${alpha(theme.palette.background.paper, 1)}, 
+                            ${alpha(theme.palette.background.paper, 0.4)}), 
+                            url(${featuredMovie.backdrop || ''})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          display: 'flex',
+          alignItems: 'flex-end',
+        }}
+      >
+        <Container maxWidth="lg" sx={{ py: 4 }}>
+          <Grid container spacing={4} alignItems="flex-end">
+            <Grid item xs={12} sm={4} md={3}>
+              <Box
+                sx={{
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                  boxShadow: '0 8px 40px rgba(0, 0, 0, 0.2)',
+                  transform: 'translateY(-20px)',
+                  display: { xs: 'none', sm: 'block' }
+                }}
+              >
+                <img 
+                  src={featuredMovie.poster} 
+                  alt={featuredMovie.title} 
+                  style={{ width: '100%', display: 'block' }}
+                />
+              </Box>
+            </Grid>
+            <Grid item xs={12} sm={8} md={9}>
+              <Box className="slide-up">
+                <Typography 
+                  variant="overline" 
+                  sx={{ 
+                    color: theme.palette.primary.main, 
+                    fontWeight: 'bold',
+                    letterSpacing: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1
+                  }}
+                >
+                  <HotIcon fontSize="small" />
+                  Featured Today
+                </Typography>
+                
+                <Typography 
+                  variant="h3" 
+                  component="h1" 
+                  gutterBottom
+                  sx={{ 
+                    fontWeight: 700,
+                    textShadow: '0 2px 10px rgba(0,0,0,0.1)',
+                    fontSize: { xs: '2rem', md: '3rem' }
+                  }}
+                >
+                  {featuredMovie.title}
+                </Typography>
+                
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <Rating
+                    value={featuredMovie.voteAverage / 2}
+                    precision={0.5}
+                    readOnly
+                  />
+                  <Typography variant="body2" sx={{ ml: 1 }}>
+                    {(featuredMovie.voteAverage / 2).toFixed(1)} ({featuredMovie.voteCount} votes)
+                  </Typography>
+                </Box>
+                
+                <Typography 
+                  variant="body1"
+                  sx={{ 
+                    mb: 3,
+                    display: '-webkit-box',
+                    overflow: 'hidden',
+                    WebkitBoxOrient: 'vertical',
+                    WebkitLineClamp: 3
+                  }}
+                >
+                  {featuredMovie.overview}
+                </Typography>
+                
+                <Button 
+                  variant="contained" 
+                  color="primary"
+                  onClick={() => window.location.href = `/movie/${featuredMovie.id}`}
+                  sx={{ 
+                    px: 4,
+                    py: 1
+                  }}
+                >
+                  View Details
+                </Button>
+              </Box>
+            </Grid>
+          </Grid>
+        </Container>
+      </Paper>
+    );
+  };
+
+  return (
+    <Box sx={{ minHeight: 'calc(100vh - 130px)' }}>
+      {/* Featured Movie Hero Section */}
+      {!searchQuery && !filterParam && !genreParam && renderFeaturedMovie()}
+
+      {/* Main Content */}
+      <Container maxWidth="xl" sx={{ py: 4 }}>
+        {/* Title Section */}
+        <Box mb={4}>
+          <Typography 
+            variant="h4" 
+            component="h2" 
+            gutterBottom 
+            sx={{ 
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1
+            }}
+          >
+            {filterParam === 'popular' ? (
+              <TheatersIcon fontSize="large" color="primary" />
+            ) : filterParam === 'trending' || !filterParam && !genreParam ? (
+              <TrendingUpIcon fontSize="large" color="primary" />
+            ) : (
+              null
+            )}
+            {getPageTitle()}
+          </Typography>
+          
+          {/* Filters */}
+          <Box 
+            sx={{ 
+              display: 'flex', 
+              flexDirection: isMobile ? 'column' : 'row',
+              gap: 2,
+              mt: 3,
+              backgroundColor: alpha(theme.palette.background.paper, 0.6),
+              p: 2,
+              borderRadius: 2
+            }}
+          >
+            <FormControl size="small" sx={{ minWidth: 200 }}>
+              <InputLabel id="movie-filter-label">Filter</InputLabel>
+              <Select
+                labelId="movie-filter-label"
+                id="movie-filter"
+                value={filterParam || 'trending'}
+                label="Filter"
+                onChange={handleFilterChange}
+                disabled={Boolean(searchQuery)}
+              >
+                <MenuItem value="trending">Trending</MenuItem>
+                <MenuItem value="popular">Popular</MenuItem>
+              </Select>
+            </FormControl>
+            
+            <FormControl size="small" sx={{ minWidth: 200 }}>
+              <InputLabel id="genre-filter-label">Genre</InputLabel>
+              <Select
+                labelId="genre-filter-label"
+                id="genre-filter"
+                value={genreParam || ''}
+                label="Genre"
+                onChange={handleGenreChange}
+                disabled={Boolean(searchQuery)}
+              >
+                <MenuItem value="">All Genres</MenuItem>
+                {genres.map((genre) => (
+                  <MenuItem key={genre.id} value={genre.id.toString()}>
+                    {genre.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+        </Box>
+
+        {/* Loading State */}
+        {loading && (
+          <Box sx={{ py: 8 }}>
+            <Grid container spacing={3}>
+              {Array.from(new Array(8)).map((_, index) => (
+                <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
+                  <Card sx={{ height: '100%', borderRadius: 2 }}>
+                    <Skeleton variant="rectangular" height={300} animation="wave" />
+                    <CardContent>
+                      <Skeleton variant="text" height={30} width="80%" animation="wave" />
+                      <Skeleton variant="text" height={20} width="60%" animation="wave" />
+                      <Skeleton variant="text" height={20} width="40%" animation="wave" sx={{ mt: 2 }} />
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
+        )}
+
+        {/* Error State */}
+        {error && !loading && (
+          <Box textAlign="center" my={8}>
+            <Typography color="error">{error}</Typography>
+          </Box>
+        )}
+
+        {/* Empty Results */}
+        {!loading && !error && movies.length === 0 && (
+          <Box textAlign="center" my={8}>
+            <Typography variant="h6">
+              No movies found. Try a different search or filter.
+            </Typography>
+          </Box>
+        )}
+
+        {/* Movie Grid */}
+        {!loading && !error && movies.length > 0 && (
+          <Grid container spacing={3}>
+            {movies.map((movie) => (
+              <Grid item xs={12} sm={6} md={4} lg={3} key={movie.id} className="fade-in">
+                <Card 
+                  className="movie-card" 
+                  sx={{ 
+                    height: '100%', 
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    borderRadius: 2,
+                    transition: 'all 0.3s ease',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    '&:hover': {
+                      transform: 'translateY(-8px)',
+                      boxShadow: `0 20px 40px ${alpha(theme.palette.primary.main, 0.15)}`
+                    },
+                    '&:hover .movie-overlay': {
+                      opacity: 1
+                    }
+                  }}
+                >
+                  <Box sx={{ position: 'relative' }}>
+                    <CardMedia
+                      component="img"
+                      height={350}
+                      image={movie.poster || 'https://via.placeholder.com/300x450?text=No+Image'}
+                      alt={movie.title}
+                      sx={{ objectFit: 'cover' }}
+                    />
+                    <Box 
+                      className="movie-overlay"
+                      sx={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        bgcolor: alpha(theme.palette.background.paper, 0.8),
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        opacity: 0,
+                        transition: 'opacity 0.3s ease',
+                        p: 2
+                      }}
+                    >
+                      <Typography 
+                        variant="body2" 
+                        color="text.primary" 
+                        align="center"
+                        sx={{
+                          mb: 2,
+                          display: '-webkit-box',
+                          overflow: 'hidden',
+                          WebkitBoxOrient: 'vertical',
+                          WebkitLineClamp: 6
+                        }}
+                      >
+                        {movie.overview || 'No overview available.'}
+                      </Typography>
+                      <Button 
+                        variant="contained" 
+                        color="primary"
+                        href={`/movie/${movie.id}`}
+                      >
+                        View Details
+                      </Button>
+                    </Box>
+                  </Box>
+                  <CardContent sx={{ flexGrow: 1, pb: 1, pt: 2 }}>
+                    <Typography 
+                      gutterBottom 
+                      variant="h6" 
+                      component="div"
+                      sx={{
+                        fontWeight: 600,
+                        fontSize: '1.1rem',
+                        display: '-webkit-box',
+                        overflow: 'hidden',
+                        WebkitBoxOrient: 'vertical',
+                        WebkitLineClamp: 2,
+                        lineHeight: 1.2,
+                        minHeight: '2.4rem'
+                      }}
+                    >
+                      {movie.title}
+                    </Typography>
+                    
+                    <Box display="flex" alignItems="center" justifyContent="space-between" sx={{ mt: 1 }}>
+                      <Box display="flex" alignItems="center">
+                        <Rating
+                          value={movie.voteAverage / 2}
+                          precision={0.5}
+                          size="small"
+                          readOnly
+                        />
+                        <Typography variant="body2" color="text.secondary" ml={1}>
+                          {(movie.voteAverage / 2).toFixed(1)}
+                        </Typography>
+                      </Box>
+                      
+                      <Typography variant="body2" color="text.secondary">
+                        {movie.releaseDate && new Date(movie.releaseDate).getFullYear()}
+                      </Typography>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <Box 
+            display="flex" 
+            justifyContent="center" 
+            mt={6}
+            sx={{ '& .MuiPagination-ul': { flexWrap: 'nowrap' } }}
+          >
+            <Pagination 
+              count={totalPages} 
+              page={page}
+              onChange={handlePageChange}
+              color="primary"
+              siblingCount={isMobile ? 0 : 1}
+              size={isMobile ? 'small' : 'medium'}
+              showFirstButton
+              showLastButton
+              sx={{
+                '& .MuiPaginationItem-root': {
+                  borderRadius: 2
+                }
+              }}
+            />
+          </Box>
+        )}
+      </Container>
+    </Box>
+  );
+};
+
+export default Home;
