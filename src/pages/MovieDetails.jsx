@@ -24,7 +24,10 @@ import {
   Paper,
   Backdrop,
   Tooltip,
-  Skeleton
+  Skeleton,
+  CardActionArea,
+  Snackbar,
+  Alert
 } from '@mui/material';
 import { 
   Favorite, 
@@ -41,6 +44,7 @@ import {
 import { alpha, useTheme } from '@mui/material/styles';
 import { getMovieDetails } from '../utils/tmdbApi';
 import { useAuth } from '../context/AuthContext';
+import { checkIsFavorite, addToFavorites, removeFromFavorites } from '../utils/favoritesService';
 
 const MovieDetails = () => {
   const { id } = useParams();
@@ -52,6 +56,11 @@ const MovieDetails = () => {
   const [tabValue, setTabValue] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
   const [trailerOpen, setTrailerOpen] = useState(false);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
 
   useEffect(() => {
     // Scroll to top when the component mounts
@@ -63,11 +72,11 @@ const MovieDetails = () => {
       try {
         const movieData = await getMovieDetails(id);
         setMovie(movieData);
-        // Check if movie is in user favorites (would require backend API)
-        // This is a placeholder for the actual implementation
+        
+        // Check if movie is in user favorites
         if (currentUser) {
-          // Example: const isFav = await checkIfFavorite(currentUser.id, id);
-          // setIsFavorite(isFav);
+          const favoriteStatus = await checkIsFavorite(id);
+          setIsFavorite(favoriteStatus);
         }
         
         // Set document title to movie name for better SEO and UX
@@ -94,16 +103,39 @@ const MovieDetails = () => {
 
   const toggleFavorite = async () => {
     if (!currentUser) {
-      // Redirect to login or show login modal
+      // Show login prompt
+      setSnackbar({
+        open: true,
+        message: 'Please login to save favorites',
+        severity: 'info'
+      });
       return;
     }
     
     try {
-      // This would call your backend API to toggle favorite status
-      // const response = await toggleFavoriteMovie(currentUser.id, movie.id);
+      if (isFavorite) {
+        await removeFromFavorites(movie.id);
+        setSnackbar({
+          open: true,
+          message: `${movie.title} removed from favorites`,
+          severity: 'success'
+        });
+      } else {
+        await addToFavorites(movie);
+        setSnackbar({
+          open: true,
+          message: `${movie.title} added to favorites`,
+          severity: 'success'
+        });
+      }
       setIsFavorite(!isFavorite);
     } catch (err) {
       console.error('Error toggling favorite:', err);
+      setSnackbar({
+        open: true,
+        message: 'Error updating favorites. Please try again.',
+        severity: 'error'
+      });
     }
   };
 
@@ -118,8 +150,16 @@ const MovieDetails = () => {
     } else {
       // Fallback: copy to clipboard
       navigator.clipboard.writeText(window.location.href);
-      // Here you could show a snackbar notification that the link was copied
+      setSnackbar({
+        open: true,
+        message: 'Link copied to clipboard',
+        severity: 'success'
+      });
     }
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
   };
 
   const formatRuntime = (minutes) => {
@@ -217,15 +257,27 @@ const MovieDetails = () => {
             <iframe
               width="100%"
               height="100%"
-              src={`https://www.youtube.com/embed/${movie.trailer.key}?autoplay=1`}
+              src={`https://www.youtube.com/embed/${movie.trailer.key}`}
               title={`${movie.title} Trailer`}
               frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
             ></iframe>
           </Box>
         )}
       </Backdrop>
+
+      {/* Snackbar for notifications */}
+      <Snackbar 
+        open={snackbar.open} 
+        autoHideDuration={4000} 
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
 
       {/* Backdrop Header */}
       <Box
@@ -399,7 +451,6 @@ const MovieDetails = () => {
                     <IconButton 
                       onClick={toggleFavorite} 
                       color="primary"
-                      disabled={!currentUser}
                       sx={{ 
                         bgcolor: isFavorite ? alpha(theme.palette.primary.main, 0.2) : alpha(theme.palette.background.paper, 0.3),
                         '&:hover': { bgcolor: isFavorite ? alpha(theme.palette.primary.main, 0.3) : alpha(theme.palette.background.paper, 0.5) }
