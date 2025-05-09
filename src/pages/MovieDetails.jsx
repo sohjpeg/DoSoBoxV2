@@ -607,9 +607,9 @@ const MovieDetails = () => {
                   {movie.cast && movie.cast.length > 0 ? (
                     <Grid container spacing={2}>
                       {movie.cast.map((person) => (
-                        <Grid item xs={6} sm={4} md={3} key={person.id}>
-                          <Card sx={{ 
-                            height: '100%', 
+                        <Grid item xs={6} sm={4} md={3} key={person.id}>                          <Card sx={{ 
+                            width: '100%',
+                            height: 280, 
                             transition: 'transform 0.2s',
                             '&:hover': { transform: 'translateY(-5px)' }
                           }}>
@@ -621,12 +621,30 @@ const MovieDetails = () => {
                                 : 'https://via.placeholder.com/300x450?text=No+Image'
                               }
                               alt={person.name}
-                            />
-                            <CardContent>
-                              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                              sx={{ objectFit: 'cover', width: '100%' }}
+                            />                            <CardContent sx={{ height: 100, overflow: 'hidden' }}>
+                              <Typography 
+                                variant="subtitle1" 
+                                sx={{ 
+                                  fontWeight: 600,
+                                  display: '-webkit-box',
+                                  overflow: 'hidden',
+                                  WebkitBoxOrient: 'vertical',
+                                  WebkitLineClamp: 1
+                                }}
+                              >
                                 {person.name}
                               </Typography>
-                              <Typography variant="body2" color="text.secondary">
+                              <Typography 
+                                variant="body2" 
+                                color="text.secondary"
+                                sx={{
+                                  display: '-webkit-box',
+                                  overflow: 'hidden',
+                                  WebkitBoxOrient: 'vertical',
+                                  WebkitLineClamp: 2
+                                }}
+                              >
                                 {person.character}
                               </Typography>
                             </CardContent>
@@ -649,9 +667,9 @@ const MovieDetails = () => {
                   {movie.similar && movie.similar.length > 0 ? (
                     <Grid container spacing={2}>
                       {movie.similar.slice(0, 8).map((similarMovie) => (
-                        <Grid item xs={6} sm={4} md={3} key={similarMovie.id}>
-                          <Card className="movie-card" sx={{ 
-                            height: '100%',
+                        <Grid item xs={6} sm={4} md={3} key={similarMovie.id}>                          <Card className="movie-card" sx={{ 
+                            width: '100%',
+                            height: 300,
                             transition: 'all 0.3s ease',
                             '&:hover': { 
                               transform: 'translateY(-5px)',
@@ -664,9 +682,20 @@ const MovieDetails = () => {
                                 height="200"
                                 image={similarMovie.poster || 'https://via.placeholder.com/300x450?text=No+Image'}
                                 alt={similarMovie.title}
-                              />
-                              <CardContent>
-                                <Typography variant="subtitle1" noWrap sx={{ fontWeight: 600 }}>
+                                sx={{ objectFit: 'cover', width: '100%' }}
+                              />                              <CardContent sx={{ height: 100, overflow: 'hidden' }}>
+                                <Typography 
+                                  variant="subtitle1" 
+                                  sx={{ 
+                                    fontWeight: 600,
+                                    display: '-webkit-box',
+                                    overflow: 'hidden',
+                                    WebkitBoxOrient: 'vertical',
+                                    WebkitLineClamp: 2,
+                                    lineHeight: 1.2,
+                                    minHeight: '2.4rem'
+                                  }}
+                                >
                                   {similarMovie.title}
                                 </Typography>
                                 <Box display="flex" alignItems="center">

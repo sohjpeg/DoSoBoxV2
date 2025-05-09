@@ -13,14 +13,12 @@ import {
   Pagination,
   CircularProgress,
   Rating,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   useMediaQuery,
   Paper,
   Button,
-  Skeleton
+  Skeleton,
+  Divider,
+  Stack
 } from '@mui/material';
 import { useTheme, alpha } from '@mui/material/styles';
 import { 
@@ -33,40 +31,26 @@ import {
   getTrendingMovies, 
   searchMovies, 
   getPopularMovies,
-  getMoviesByGenre,
-  getGenres 
+  getGenres,
+  getTopRatedMovies,
+  getUpcomingMovies,
+  getNowPlayingMovies
 } from '../utils/tmdbApi';
 
 const Home = () => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));  
   const [searchParams, setSearchParams] = useSearchParams();
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
-  const [genres, setGenres] = useState([]);
   const [featuredMovie, setFeaturedMovie] = useState(null);
   const [featuredLoading, setFeaturedLoading] = useState(true);
   
   const searchQuery = searchParams.get('search') || '';
   const filterParam = searchParams.get('filter') || '';
-  const genreParam = searchParams.get('genre') || '';
-
-  // Fetch genres on component mount
-  useEffect(() => {
-    const fetchGenres = async () => {
-      try {
-        const genreList = await getGenres();
-        setGenres(genreList);
-      } catch (err) {
-        console.error('Error fetching genres:', err);
-      }
-    };
-
-    fetchGenres();
-  }, []);
 
   // Fetch a featured movie for the hero section
   useEffect(() => {
@@ -84,14 +68,14 @@ const Home = () => {
       }
     };
 
-    // Only fetch featured movie for homepage (not search or filter pages)
-    if (!searchQuery && !filterParam && !genreParam) {
+    // Only fetch featured movie for homepage (not search pages)
+    if (!searchQuery && !filterParam) {
       fetchFeaturedMovie();
     } else {
       setFeaturedMovie(null);
       setFeaturedLoading(false);
     }
-  }, [searchQuery, filterParam, genreParam]);
+  }, [searchQuery, filterParam]);
 
   // Fetch movies based on parameters
   useEffect(() => {
@@ -102,24 +86,34 @@ const Home = () => {
       try {
         let response;
 
+        // If search is active, it takes priority
         if (searchQuery) {
-          // Search for movies
           response = await searchMovies(searchQuery, page);
-        } else if (genreParam) {
-          // Filter by genre
-          response = await getMoviesByGenre(parseInt(genreParam), page);
-        } else {
-          // Default to trending or popular
-          if (filterParam === 'popular') {
-            response = await getPopularMovies(page);
-          } else {
-            // Default to trending
-            response = await getTrendingMovies('week', page);
+        } 
+        else {
+          // Pre-defined filter options
+          switch(filterParam) {
+            case 'popular':
+              response = await getPopularMovies(page);
+              break;
+            case 'top_rated':
+              response = await getTopRatedMovies(page);
+              break;
+            case 'upcoming':
+              response = await getUpcomingMovies(page);
+              break;
+            case 'now_playing':
+              response = await getNowPlayingMovies(page);
+              break;
+            default:
+              // Default to trending
+              response = await getTrendingMovies('week', page);
+              break;
           }
         }
 
         setMovies(response.results);
-        setTotalPages(Math.min(response.totalPages, 500)); // TMDB API limits to 500 pages
+        setTotalPages(Math.min(response.total_pages || response.totalPages, 500)); // TMDB API limits to 500 pages
       } catch (err) {
         console.error('Error fetching movies:', err);
         setError('Failed to load movies. Please try again later.');
@@ -130,7 +124,7 @@ const Home = () => {
     };
 
     fetchMovies();
-  }, [searchQuery, filterParam, genreParam, page]);
+  }, [searchQuery, filterParam, page]);
 
   // Handle page change
   const handlePageChange = (event, value) => {
@@ -138,38 +132,17 @@ const Home = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Handle filter change
-  const handleFilterChange = (event) => {
-    setPage(1);
-    if (event.target.value === 'trending' || event.target.value === 'popular') {
-      searchParams.delete('genre');
-      searchParams.set('filter', event.target.value);
-    } else {
-      searchParams.delete('filter');
-    }
-    setSearchParams(searchParams);
-  };
-
-  // Handle genre change
-  const handleGenreChange = (event) => {
-    setPage(1);
-    if (event.target.value) {
-      searchParams.delete('filter');
-      searchParams.set('genre', event.target.value);
-    } else {
-      searchParams.delete('genre');
-    }
-    setSearchParams(searchParams);
-  };
-
   const getPageTitle = () => {
     if (searchQuery) {
       return `Search Results: "${searchQuery}"`;
-    } else if (genreParam) {
-      const genre = genres.find(g => g.id === parseInt(genreParam));
-      return `${genre?.name || ''} Movies`;
     } else if (filterParam === 'popular') {
       return 'Popular Movies';
+    } else if (filterParam === 'top_rated') {
+      return 'Top Rated Movies';
+    } else if (filterParam === 'upcoming') {
+      return 'Upcoming Movies';
+    } else if (filterParam === 'now_playing') {
+      return 'Now Playing Movies';
     } else {
       return 'Trending Movies';
     }
@@ -310,7 +283,7 @@ const Home = () => {
   return (
     <Box sx={{ minHeight: 'calc(100vh - 130px)' }}>
       {/* Featured Movie Hero Section */}
-      {!searchQuery && !filterParam && !genreParam && renderFeaturedMovie()}
+      {!searchQuery && !filterParam && renderFeaturedMovie()}
 
       {/* Main Content */}
       <Container maxWidth="xl" sx={{ py: 4 }}>
@@ -329,60 +302,14 @@ const Home = () => {
           >
             {filterParam === 'popular' ? (
               <TheatersIcon fontSize="large" color="primary" />
-            ) : filterParam === 'trending' || !filterParam && !genreParam ? (
+            ) : !filterParam ? (
               <TrendingUpIcon fontSize="large" color="primary" />
             ) : (
               null
             )}
             {getPageTitle()}
           </Typography>
-          
-          {/* Filters */}
-          <Box 
-            sx={{ 
-              display: 'flex', 
-              flexDirection: isMobile ? 'column' : 'row',
-              gap: 2,
-              mt: 3,
-              backgroundColor: alpha(theme.palette.background.paper, 0.6),
-              p: 2,
-              borderRadius: 2
-            }}
-          >
-            <FormControl size="small" sx={{ minWidth: 200 }}>
-              <InputLabel id="movie-filter-label">Filter</InputLabel>
-              <Select
-                labelId="movie-filter-label"
-                id="movie-filter"
-                value={filterParam || 'trending'}
-                label="Filter"
-                onChange={handleFilterChange}
-                disabled={Boolean(searchQuery)}
-              >
-                <MenuItem value="trending">Trending</MenuItem>
-                <MenuItem value="popular">Popular</MenuItem>
-              </Select>
-            </FormControl>
-            
-            <FormControl size="small" sx={{ minWidth: 200 }}>
-              <InputLabel id="genre-filter-label">Genre</InputLabel>
-              <Select
-                labelId="genre-filter-label"
-                id="genre-filter"
-                value={genreParam || ''}
-                label="Genre"
-                onChange={handleGenreChange}
-                disabled={Boolean(searchQuery)}
-              >
-                <MenuItem value="">All Genres</MenuItem>
-                {genres.map((genre) => (
-                  <MenuItem key={genre.id} value={genre.id.toString()}>
-                    {genre.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Box>
+  
         </Box>
 
         {/* Loading State */}
@@ -390,9 +317,8 @@ const Home = () => {
           <Box sx={{ py: 8 }}>
             <Grid container spacing={3}>
               {Array.from(new Array(8)).map((_, index) => (
-                <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
-                  <Card sx={{ height: '100%', borderRadius: 2 }}>
-                    <Skeleton variant="rectangular" height={300} animation="wave" />
+                <Grid item xs={12} sm={6} md={4} lg={3} key={index}>                  <Card sx={{ height: 500, width: '100%', borderRadius: 2 }}>
+                    <Skeleton variant="rectangular" height={350} animation="wave" />
                     <CardContent>
                       <Skeleton variant="text" height={30} width="80%" animation="wave" />
                       <Skeleton variant="text" height={20} width="60%" animation="wave" />
@@ -416,7 +342,7 @@ const Home = () => {
         {!loading && !error && movies.length === 0 && (
           <Box textAlign="center" my={8}>
             <Typography variant="h6">
-              No movies found. Try a different search or filter.
+              No movies found. Try a different search.
             </Typography>
           </Box>
         )}
@@ -429,13 +355,15 @@ const Home = () => {
                 <Card 
                   className="movie-card" 
                   sx={{ 
-                    height: '100%', 
+                    width: 270, // fixed width
+                    height: 500, // fixed height
                     display: 'flex', 
                     flexDirection: 'column',
                     borderRadius: 2,
                     transition: 'all 0.3s ease',
                     position: 'relative',
                     overflow: 'hidden',
+                    mx: 'auto', // center in grid
                     '&:hover': {
                       transform: 'translateY(-8px)',
                       boxShadow: `0 20px 40px ${alpha(theme.palette.primary.main, 0.15)}`
@@ -445,13 +373,22 @@ const Home = () => {
                     }
                   }}
                 >
-                  <Box sx={{ position: 'relative' }}>
+                  <Box sx={{ position: 'relative', width: '100%', aspectRatio: '2/3', minHeight: 0, maxHeight: 360, flexShrink: 0 }}>
                     <CardMedia
                       component="img"
-                      height={350}
                       image={movie.poster || 'https://via.placeholder.com/300x450?text=No+Image'}
                       alt={movie.title}
-                      sx={{ objectFit: 'cover' }}
+                      sx={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        aspectRatio: '2/3',
+                        minHeight: 0,
+                        maxHeight: 360,
+                        background: '#222',
+                        display: 'block',
+                        borderRadius: 0
+                      }}
                     />
                     <Box 
                       className="movie-overlay"
@@ -480,7 +417,9 @@ const Home = () => {
                           display: '-webkit-box',
                           overflow: 'hidden',
                           WebkitBoxOrient: 'vertical',
-                          WebkitLineClamp: 6
+                          WebkitLineClamp: 6,
+                          minHeight: '5.5em',
+                          maxHeight: '7em'
                         }}
                       >
                         {movie.overview || 'No overview available.'}
@@ -493,8 +432,7 @@ const Home = () => {
                         View Details
                       </Button>
                     </Box>
-                  </Box>
-                  <CardContent sx={{ flexGrow: 1, pb: 1, pt: 2 }}>
+                  </Box>                  <CardContent sx={{ flexGrow: 1, pb: 1, pt: 2, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: 0 }}>
                     <Typography 
                       gutterBottom 
                       variant="h6" 
@@ -507,13 +445,14 @@ const Home = () => {
                         WebkitBoxOrient: 'vertical',
                         WebkitLineClamp: 2,
                         lineHeight: 1.2,
-                        minHeight: '2.4rem'
+                        minHeight: '2.4em',
+                        maxHeight: '2.4em',
+                        mb: 1
                       }}
                     >
                       {movie.title}
                     </Typography>
-                    
-                    <Box display="flex" alignItems="center" justifyContent="space-between" sx={{ mt: 1 }}>
+                    <Box display="flex" alignItems="center" justifyContent="space-between" sx={{ mt: 'auto' }}>
                       <Box display="flex" alignItems="center">
                         <Rating
                           value={movie.voteAverage / 2}
@@ -525,7 +464,6 @@ const Home = () => {
                           {(movie.voteAverage / 2).toFixed(1)}
                         </Typography>
                       </Box>
-                      
                       <Typography variant="body2" color="text.secondary">
                         {movie.releaseDate && new Date(movie.releaseDate).getFullYear()}
                       </Typography>

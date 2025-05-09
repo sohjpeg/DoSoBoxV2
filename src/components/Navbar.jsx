@@ -119,7 +119,7 @@ const Navbar = ({ toggleThemeMode, mode }) => {
   const toggleDrawer = (open) => () => {
     setDrawerOpen(open);
   };
-
+  
   // Handle notifications menu
   const handleNotificationsOpen = (event) => {
     setNotificationAnchorEl(event.currentTarget);
@@ -135,15 +135,27 @@ const Navbar = ({ toggleThemeMode, mode }) => {
     logout();
     navigate('/');
   };
-
+  
   // Handle search submission
   const handleSearchSubmit = (e) => {
     e.preventDefault();
+    
+    // Create query parameters
+    const params = new URLSearchParams();
+    
+    // Add search query if provided
     if (searchQuery.trim()) {
-      navigate(`/?search=${encodeURIComponent(searchQuery)}`);
-      if (isMobile) {
-        setDrawerOpen(false);
-      }
+      params.append('search', searchQuery.trim());
+    } else {
+      params.append('filter', 'trending');
+    }
+    
+    // Navigate with search query
+    navigate(`/?${params.toString()}`);
+    
+    // Close mobile drawer if open
+    if (isMobile) {
+      setDrawerOpen(false);
     }
   };
 
@@ -151,33 +163,41 @@ const Navbar = ({ toggleThemeMode, mode }) => {
     <Box
       sx={{ width: 280 }}
       role="presentation"
-    >
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2 }}>
-        <Typography variant="h6" color="primary" sx={{ fontWeight: 700 }}>
-          DosoBox
-        </Typography>
-        <IconButton onClick={toggleDrawer(false)}>
-          <CloseIcon />
-        </IconButton>
-      </Box>
-      <Divider />
-      <Box 
-        component="form" 
-        onSubmit={handleSearchSubmit}
-        sx={{ p: 2 }}
-      >
-        <Search>
-          <SearchIconWrapper>
-            <SearchIcon />
-          </SearchIconWrapper>
-          <StyledInputBase
-            placeholder="Search movies…"
-            inputProps={{ 'aria-label': 'search' }}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </Search>
-      </Box>
+    >        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2 }}>
+          <Typography variant="h6" color="primary" sx={{ fontWeight: 700 }}>
+            DosoBox
+          </Typography>
+          <IconButton onClick={toggleDrawer(false)}>
+            <CloseIcon />
+          </IconButton>
+        </Box>
+        <Divider />      
+        <Box 
+          component="form" 
+          onSubmit={handleSearchSubmit}
+          sx={{ p: 2 }}
+        >
+          <Search>
+            <SearchIconWrapper>
+              <SearchIcon />
+            </SearchIconWrapper>
+            <StyledInputBase
+              placeholder="Search movies…"
+              inputProps={{ 'aria-label': 'search' }}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </Search>
+          <Button 
+            type="submit"
+            variant="contained"
+            color="primary"
+            fullWidth
+            sx={{ mt: 1, borderRadius: 2 }}
+          >
+            Search
+          </Button>
+        </Box>
       <Divider />
       <List>
         <ListItem button component={Link} to="/" onClick={toggleDrawer(false)}>
@@ -282,16 +302,16 @@ const Navbar = ({ toggleThemeMode, mode }) => {
             >
               Home
             </Button>
-          </Box>
-          
-          {/* Search bar - desktop */}
+          </Box>            {/* Search bar - desktop */}          
           <Box 
             component="form" 
             onSubmit={handleSearchSubmit}
             sx={{ 
-              flexGrow: 0.5,
               display: { xs: 'none', sm: 'flex' },
-              mr: 1
+              flexGrow: 1,
+              mr: 1,
+              ml: 2,
+              alignItems: 'center'
             }}
           >
             <Search sx={{ width: '100%', maxWidth: 400 }}>
@@ -305,6 +325,15 @@ const Navbar = ({ toggleThemeMode, mode }) => {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </Search>
+            <Button 
+              type="submit"
+              variant="contained"
+              color="primary"
+              size="small"
+              sx={{ ml: 1, borderRadius: 2 }}
+            >
+              Search
+            </Button>
           </Box>
 
           {/* Theme toggle */}
