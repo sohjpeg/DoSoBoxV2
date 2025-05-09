@@ -11,17 +11,23 @@ import {
   Avatar,
   Alert,
   InputAdornment,
-  IconButton
+  IconButton,
+  Divider,
+  useMediaQuery
 } from '@mui/material';
 import { 
   PersonAdd, 
   Visibility, 
-  VisibilityOff 
+  VisibilityOff,
+  Movie
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
+import { useTheme, alpha } from '@mui/material/styles';
 
 const Register = () => {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { register, error: authError } = useAuth();
   const [formData, setFormData] = useState({
     username: '',
@@ -103,130 +109,236 @@ const Register = () => {
   const toggleShowPassword = () => {
     setShowPassword(!showPassword);
   };
-
   return (
-    <Container maxWidth="xs" className="fade-in">
+    <Container maxWidth="sm" className="fade-in" sx={{ py: 8 }}>
+      <Box 
+        sx={{ 
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          mb: 4
+        }}
+      >
+        <Avatar 
+          sx={{ 
+            bgcolor: 'primary.main',
+            width: 60, 
+            height: 60,
+            boxShadow: 2,
+            mb: 2
+          }}
+        >
+          <Movie sx={{ fontSize: 30 }} />
+        </Avatar>
+        <Typography 
+          variant="h4" 
+          component="div" 
+          color="primary.main"
+          sx={{ 
+            fontWeight: 700,
+            letterSpacing: 1,
+            mb: 1
+          }}
+        >
+          DosoBox
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Your personal movie database
+        </Typography>
+      </Box>
+
       <Paper 
         elevation={3} 
         sx={{ 
-          mt: 8, 
-          p: 4, 
+          p: { xs: 3, sm: 5 }, 
           display: 'flex', 
           flexDirection: 'column', 
           alignItems: 'center',
-          borderRadius: 2
+          borderRadius: 4,
+          backgroundImage: 'linear-gradient(to bottom, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 100%)',
+          backdropFilter: 'blur(20px)',
+          boxShadow: theme.palette.mode === 'dark' 
+            ? '0 8px 32px rgba(0, 0, 0, 0.3)'
+            : '0 8px 32px rgba(145, 158, 171, 0.24)'
         }}
       >
-        <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}>
-          <PersonAdd />
+        <Avatar sx={{ 
+          m: 1, 
+          bgcolor: 'primary.main', 
+          width: 56, 
+          height: 56,
+          boxShadow: 3
+        }}>
+          <PersonAdd fontSize="large" />
         </Avatar>
-        <Typography component="h1" variant="h5">
+        <Typography component="h1" variant="h5" sx={{ mb: 1, fontWeight: 700 }}>
           Create Account
+        </Typography>
+        <Typography variant="body2" color="text.secondary" align="center" sx={{ mb: 3 }}>
+          Join DosoBox to track and discover movies
         </Typography>
         
         {(registerError || authError) && (
-          <Alert severity="error" sx={{ mt: 2, width: '100%' }}>
+          <Alert 
+            severity="error" 
+            variant="outlined"
+            sx={{ 
+              mt: 1, 
+              mb: 2, 
+              width: '100%',
+              borderRadius: 2
+            }}
+          >
             {registerError || authError}
           </Alert>
         )}
-        
-        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3 }} noValidate>
-          <Grid container spacing={2}>
-            <Grid item xs={12}>
-              <TextField
-                required
-                fullWidth
-                id="username"
-                label="Username"
-                name="username"
-                autoComplete="username"
-                value={formData.username}
-                onChange={handleChange}
-                error={Boolean(errors.username)}
-                helperText={errors.username}
-              />
-            </Grid>
+          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2, width: '100%' }} noValidate>
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            id="username"
+            label="Username"
+            name="username"
+            autoComplete="username"
+            autoFocus
+            value={formData.username}
+            onChange={handleChange}
+            error={Boolean(errors.username)}
+            helperText={errors.username}
+            variant="outlined"
+            sx={{ 
+              mb: 2,
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+              }
+            }}
+          />
             
-            <Grid item xs={12}>
-              <TextField
-                required
-                fullWidth
-                id="email"
-                label="Email Address"
-                name="email"
-                autoComplete="email"
-                value={formData.email}
-                onChange={handleChange}
-                error={Boolean(errors.email)}
-                helperText={errors.email}
-              />
-            </Grid>
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            id="email"
+            label="Email Address"
+            name="email"
+            autoComplete="email"
+            value={formData.email}
+            onChange={handleChange}
+            error={Boolean(errors.email)}
+            helperText={errors.email}
+            variant="outlined"
+            sx={{ 
+              mb: 2,
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+              }
+            }}
+          />
             
-            <Grid item xs={12}>
-              <TextField
-                required
-                fullWidth
-                name="password"
-                label="Password"
-                type={showPassword ? 'text' : 'password'}
-                id="password"
-                autoComplete="new-password"
-                value={formData.password}
-                onChange={handleChange}
-                error={Boolean(errors.password)}
-                helperText={errors.password}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        aria-label="toggle password visibility"
-                        onClick={toggleShowPassword}
-                        edge="end"
-                      >
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            </Grid>
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            name="password"
+            label="Password"
+            type={showPassword ? 'text' : 'password'}
+            id="password"
+            autoComplete="new-password"
+            value={formData.password}
+            onChange={handleChange}
+            error={Boolean(errors.password)}
+            helperText={errors.password}
+            variant="outlined"
+            sx={{ 
+              mb: 2,
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+              }
+            }}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    aria-label="toggle password visibility"
+                    onClick={toggleShowPassword}
+                    edge="end"
+                  >
+                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
             
-            <Grid item xs={12}>
-              <TextField
-                required
-                fullWidth
-                name="confirmPassword"
-                label="Confirm Password"
-                type={showPassword ? 'text' : 'password'}
-                id="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                error={Boolean(errors.confirmPassword)}
-                helperText={errors.confirmPassword}
-              />
-            </Grid>
-          </Grid>
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            name="confirmPassword"
+            label="Confirm Password"
+            type={showPassword ? 'text' : 'password'}
+            id="confirmPassword"
+            value={formData.confirmPassword}
+            onChange={handleChange}
+            error={Boolean(errors.confirmPassword)}
+            helperText={errors.confirmPassword}
+            variant="outlined"
+            sx={{ 
+              mb: 2,
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+              }
+            }}
+          />
           
           <Button
             type="submit"
             fullWidth
             variant="contained"
-            color="secondary"
-            sx={{ mt: 3, mb: 2 }}
+            color="primary"
+            size="large"
+            sx={{ 
+              mt: 2, 
+              mb: 3, 
+              py: 1.5,
+              borderRadius: 2,
+              boxShadow: 3,
+              fontWeight: 600,
+              textTransform: 'none',
+              fontSize: '1rem'
+            }}
             disabled={isSubmitting}
           >
             {isSubmitting ? 'Creating Account...' : 'Create Account'}
           </Button>
           
-          <Grid container justifyContent="flex-end">
-            <Grid item>
-              <Link to="/login" style={{ color: 'inherit' }}>
-                <Typography variant="body2" color="primary">
-                  Already have an account? Sign in
-                </Typography>
-              </Link>
-            </Grid>
-          </Grid>
+          <Divider sx={{ my: 2 }}>
+            <Typography variant="body2" color="text.secondary">
+              OR
+            </Typography>
+          </Divider>
+          
+          <Box sx={{ textAlign: 'center', mt: 1 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              Already have an account?
+            </Typography>
+            <Link to="/login" style={{ textDecoration: 'none' }}>
+              <Button
+                fullWidth
+                variant="outlined"
+                color="primary"
+                sx={{ 
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  fontSize: '0.9rem'
+                }}
+              >
+                Sign In Instead
+              </Button>
+            </Link>
+          </Box>
         </Box>
       </Paper>
     </Container>

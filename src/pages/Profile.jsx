@@ -24,16 +24,25 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  Chip,
+  Divider,
+  useMediaQuery
 } from '@mui/material';
 import { 
   Edit, 
   Save, 
   Delete,
   Person,
-  Favorite
+  Favorite,
+  Movie as MovieIcon,
+  CalendarMonth,
+  Email,
+  MovieFilter,
+  CheckCircle
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { getFavorites, removeFromFavorites } from '../utils/favoritesService';
+import { useTheme, alpha } from '@mui/material/styles';
 
 const Profile = () => {
   const { currentUser, updateProfile, logout } = useAuth();
@@ -47,6 +56,8 @@ const Profile = () => {
   const [tabValue, setTabValue] = useState(0);
   const [confirmLogout, setConfirmLogout] = useState(false);
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   useEffect(() => {
     // If user is not logged in, redirect to login
@@ -129,59 +140,140 @@ const Profile = () => {
     }
   };
 
+  const profileImageUrl = currentUser.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.username)}&background=random&color=fff&size=256`;
+  const joinDate = new Date(currentUser.joinDate || Date.now());
+  const favoriteCount = favorites.length;
+
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      {/* Profile Header */}
-      <Paper
-        elevation={0}
-        sx={{
-          p: 3,
+    <Container maxWidth="lg" className="fade-in" sx={{ py: { xs: 4, md: 6 } }}>
+      {/* Profile Banner */}
+      <Box 
+        sx={{ 
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          mb: 4
+        }}
+      >
+        <Avatar 
+          sx={{ 
+            bgcolor: 'primary.main',
+            width: 60, 
+            height: 60,
+            boxShadow: 2,
+            mb: 2
+          }}
+        >
+          <MovieIcon sx={{ fontSize: 30 }} />
+        </Avatar>
+        <Typography 
+          variant="h4" 
+          component="div" 
+          color="primary.main"
+          sx={{ 
+            fontWeight: 700,
+            letterSpacing: 1,
+            mb: 1
+          }}
+        >
+          DosoBox
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Your personal movie database
+        </Typography>
+      </Box>
+
+      {/* Profile Header Card */}
+      <Paper 
+        elevation={3} 
+        sx={{ 
+          p: { xs: 3, sm: 5 }, 
           mb: 4,
-          borderRadius: 2,
-          background: 'linear-gradient(to right, #673ab7, #9c27b0)',
-          color: 'white',
+          borderRadius: 4,
+          backgroundImage: 'linear-gradient(to bottom, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 100%)',
+          backdropFilter: 'blur(20px)',
+          boxShadow: theme.palette.mode === 'dark' 
+            ? '0 8px 32px rgba(0, 0, 0, 0.3)'
+            : '0 8px 32px rgba(145, 158, 171, 0.24)'
         }}
       >
         <Grid container spacing={3} alignItems="center">
-          <Grid item xs={12} md={2}>
-            <Box display="flex" justifyContent={{ xs: 'center', md: 'flex-start' }}>
-              <Avatar
-                src={currentUser.avatar || ''}
-                alt={currentUser.username}
-                sx={{
-                  width: 120,
-                  height: 120,
-                  border: '4px solid white',
-                  boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
-                }}
+          <Grid item xs={12} md={3} sx={{ display: 'flex', justifyContent: { xs: 'center', md: 'flex-start' } }}>
+            <Avatar
+              src={profileImageUrl}
+              alt={currentUser.username}
+              sx={{
+                width: { xs: 120, md: 160 },
+                height: { xs: 120, md: 160 },
+                border: `4px solid ${theme.palette.primary.main}`,
+                boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+              }}
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <Typography variant="h4" fontWeight={700} gutterBottom sx={{ textAlign: { xs: 'center', md: 'left' } }}>
+              {currentUser.username}
+            </Typography>
+            
+            <Box sx={{ 
+              display: 'flex', 
+              flexDirection: { xs: 'column', sm: 'row' }, 
+              gap: 2, 
+              mb: 2, 
+              alignItems: { xs: 'center', md: 'flex-start' },
+              justifyContent: { xs: 'center', md: 'flex-start' }
+            }}>
+              <Chip 
+                icon={<Email fontSize="small" />} 
+                label={currentUser.email} 
+                variant="outlined" 
+                color="primary"
+                sx={{ borderRadius: 2 }}
+              />
+              <Chip 
+                icon={<CalendarMonth fontSize="small" />} 
+                label={`Joined ${joinDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`}
+                variant="outlined"
+                sx={{ borderRadius: 2 }}
+              />
+            </Box>
+            
+            <Box sx={{ mt: 1, display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: { xs: 'center', md: 'flex-start' } }}>
+              <Chip 
+                icon={<MovieFilter fontSize="small" />} 
+                label={`${favoriteCount} Favorite ${favoriteCount === 1 ? 'Movie' : 'Movies'}`} 
+                color="secondary" 
+                variant="filled" 
+                size="small"
+                sx={{ borderRadius: 2 }}
+              />
+              <Chip 
+                icon={<CheckCircle fontSize="small" />} 
+                label="Active Account" 
+                color="success" 
+                variant="filled"
+                size="small"
+                sx={{ borderRadius: 2 }}
               />
             </Box>
           </Grid>
-          <Grid item xs={12} md={8}>
-            <Box>
-              <Typography variant="h4" fontWeight={700} gutterBottom>
-                {currentUser.username}
-              </Typography>
-              <Typography variant="body1" sx={{ mb: 1, opacity: 0.9 }}>
-                {currentUser.email}
-              </Typography>
-              <Typography variant="body2" sx={{ opacity: 0.8 }}>
-                Member since: {new Date(currentUser.joinDate).toLocaleDateString()}
-              </Typography>
-            </Box>
-          </Grid>
-          <Grid item xs={12} md={2}>
-            <Box display="flex" justifyContent={{ xs: 'center', md: 'flex-end' }}>
-              <Button
-                variant="contained"
-                color="secondary"
-                startIcon={editing ? <Save /> : <Edit />}
-                onClick={handleEditToggle}
-                sx={{ fontWeight: 600 }}
-              >
-                {editing ? 'Save Profile' : 'Edit Profile'}
-              </Button>
-            </Box>
+          <Grid item xs={12} md={3} sx={{ display: 'flex', justifyContent: { xs: 'center', md: 'flex-end' } }}>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={editing ? <Save /> : <Edit />}
+              onClick={handleEditToggle}
+              sx={{ 
+                fontWeight: 600,
+                borderRadius: 2,
+                py: 1,
+                px: 3,
+                boxShadow: 3,
+                textTransform: 'none'
+              }}
+            >
+              {editing ? 'Save Profile' : 'Edit Profile'}
+            </Button>
           </Grid>
         </Grid>
       </Paper>
@@ -189,12 +281,29 @@ const Profile = () => {
       <Grid container spacing={4}>
         {/* Profile Details */}
         <Grid item xs={12} md={4}>
-          <Paper elevation={0} sx={{ p: 3, borderRadius: 2, height: '100%' }}>
-            <Typography variant="h6" fontWeight={600} gutterBottom>
-              Profile Information
-            </Typography>
+          <Paper 
+            elevation={3} 
+            sx={{ 
+              p: { xs: 3, sm: 4 }, 
+              borderRadius: 4,
+              height: '100%',
+              backgroundImage: 'linear-gradient(to bottom, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 100%)',
+              backdropFilter: 'blur(20px)',
+              boxShadow: theme.palette.mode === 'dark' 
+                ? '0 8px 32px rgba(0, 0, 0, 0.3)'
+                : '0 8px 32px rgba(145, 158, 171, 0.24)'
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+              <Person color="primary" sx={{ mr: 1.5 }} />
+              <Typography variant="h6" fontWeight={700} color="primary.main">
+                Profile Information
+              </Typography>
+            </Box>
+            <Divider sx={{ mb: 3 }} />
+            
             {editing ? (
-              <Box component="form" sx={{ mt: 2 }}>
+              <Box component="form" sx={{ mt: 1 }}>
                 <TextField
                   fullWidth
                   label="Bio"
@@ -205,6 +314,12 @@ const Profile = () => {
                   rows={4}
                   margin="normal"
                   variant="outlined"
+                  sx={{ 
+                    mb: 2,
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                    }
+                  }}
                 />
                 <TextField
                   fullWidth
@@ -215,22 +330,32 @@ const Profile = () => {
                   margin="normal"
                   variant="outlined"
                   helperText="Enter a URL for your profile picture"
+                  sx={{ 
+                    mb: 2,
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                    }
+                  }}
                 />
               </Box>
             ) : (
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="subtitle1" fontWeight={500} gutterBottom>
-                  Bio
+              <Box>
+                <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ color: 'primary.main' }}>
+                  About Me
                 </Typography>
-                <Typography variant="body2" paragraph>
-                  {currentUser.bio || 'No bio provided yet.'}
+                <Typography variant="body2" paragraph sx={{ minHeight: 80 }}>
+                  {currentUser.bio || 'No bio provided yet. Click "Edit Profile" to add your bio.'}
                 </Typography>
+                
+                <Divider sx={{ my: 3 }} />
+                
                 <Box
                   sx={{
-                    mt: 4,
                     display: 'flex',
+                    flexDirection: { xs: 'column', sm: 'row' },
                     justifyContent: 'space-between',
                     alignItems: 'center',
+                    gap: 2,
                   }}
                 >
                   <Button
@@ -239,6 +364,12 @@ const Profile = () => {
                     startIcon={<Person />}
                     component={Link}
                     to="/"
+                    sx={{ 
+                      borderRadius: 2,
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      width: { xs: '100%', sm: 'auto' }
+                    }}
                   >
                     Home
                   </Button>
@@ -247,6 +378,12 @@ const Profile = () => {
                     color="error"
                     startIcon={<Delete />}
                     onClick={() => setConfirmLogout(true)}
+                    sx={{ 
+                      borderRadius: 2,
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      width: { xs: '100%', sm: 'auto' }
+                    }}
                   >
                     Logout
                   </Button>
@@ -256,119 +393,169 @@ const Profile = () => {
           </Paper>
         </Grid>
 
-        {/* Content Area */}
+        {/* Content Area - Favorites */}
         <Grid item xs={12} md={8}>
-          <Paper elevation={0} sx={{ p: 3, borderRadius: 2 }}>
-            <Tabs value={tabValue} onChange={handleTabChange} sx={{ mb: 3 }}>
-              <Tab
-                label={
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Favorite sx={{ mr: 1, fontSize: 18 }} />
-                    <Typography fontWeight={600}>My Favorites</Typography>
-                  </Box>
-                }
-              />
-            </Tabs>
+          <Paper 
+            elevation={3} 
+            sx={{ 
+              p: { xs: 3, sm: 4 }, 
+              borderRadius: 4,
+              backgroundImage: 'linear-gradient(to bottom, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 100%)',
+              backdropFilter: 'blur(20px)',
+              boxShadow: theme.palette.mode === 'dark' 
+                ? '0 8px 32px rgba(0, 0, 0, 0.3)'
+                : '0 8px 32px rgba(145, 158, 171, 0.24)'
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+              <Favorite color="primary" sx={{ mr: 1.5 }} />
+              <Typography variant="h6" fontWeight={700} color="primary.main">
+                My Favorites
+              </Typography>
+            </Box>
+            <Divider sx={{ mb: 3 }} />
 
-            {tabValue === 0 && (
-              <Box>
-                <Typography variant="h6" gutterBottom>
-                  Your Favorite Movies
-                </Typography>
-                {loading ? (
-                  <Grid container spacing={2}>
-                    {[1, 2, 3, 4].map((item) => (
-                      <Grid item xs={6} sm={4} md={3} key={item}>
-                        <Card sx={{ height: '100%' }}>
-                          <Skeleton variant="rectangular" height={180} />
-                          <CardContent>
-                            <Skeleton width="80%" />
-                            <Skeleton width="60%" />
-                          </CardContent>
-                        </Card>
-                      </Grid>
-                    ))}
+            {loading ? (
+              <Grid container spacing={2}>
+                {[1, 2, 3, 4, 5, 6].map((item) => (
+                  <Grid item xs={6} sm={4} md={4} key={item}>
+                    <Card sx={{ height: '100%', borderRadius: 3, overflow: 'hidden', boxShadow: 2 }}>
+                      <Skeleton variant="rectangular" height={220} />
+                      <CardContent>
+                        <Skeleton width="80%" />
+                        <Skeleton width="60%" />
+                      </CardContent>
+                    </Card>
                   </Grid>
-                ) : favorites.length > 0 ? (
-                  <Grid container spacing={2}>
-                    {favorites.map((movie) => (
-                      <Grid item xs={6} sm={4} md={3} key={movie._id}>
-                        <Card
+                ))}
+              </Grid>
+            ) : favorites.length > 0 ? (
+              <Grid container spacing={2}>
+                {favorites.map((movie) => (
+                  <Grid item xs={6} sm={4} md={4} key={movie._id}>
+                    <Card
+                      sx={{
+                        height: '100%',
+                        position: 'relative',
+                        transition: 'all 0.3s ease',
+                        borderRadius: 3,
+                        overflow: 'hidden',
+                        boxShadow: 2,
+                        '&:hover': { 
+                          transform: 'translateY(-8px)',
+                          boxShadow: 8 
+                        },
+                      }}
+                    >
+                      <CardActionArea component={Link} to={`/movie/${movie.tmdbId}`}>
+                        <CardMedia
+                          component="img"
+                          height={220}
+                          image={movie.poster || 'https://via.placeholder.com/500x750?text=No+Poster'}
+                          alt={movie.title}
                           sx={{
-                            height: '100%',
-                            position: 'relative',
-                            transition: 'transform 0.2s',
-                            '&:hover': { transform: 'translateY(-4px)' },
+                            objectFit: 'cover',
                           }}
-                        >
-                          <CardActionArea component={Link} to={`/movie/${movie.tmdbId}`}>
-                            <CardMedia
-                              component="img"
-                              height={200}
-                              image={movie.poster || 'https://via.placeholder.com/500x750?text=No+Poster'}
-                              alt={movie.title}
-                            />
-                            <CardContent sx={{ pb: 0 }}>
-                              <Typography variant="subtitle1" fontWeight={600} noWrap>
-                                {movie.title}
-                              </Typography>
-                              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                <Rating
-                                  value={movie.voteAverage / 2}
-                                  precision={0.5}
-                                  size="small"
-                                  readOnly
-                                />
-                                <Typography variant="caption" color="text.secondary" ml={1}>
-                                  ({movie.voteAverage?.toFixed(1)})
-                                </Typography>
-                              </Box>
-                            </CardContent>
-                          </CardActionArea>
-                          <Box
-                            sx={{
-                              position: 'absolute',
-                              top: 8,
-                              right: 8,
-                              zIndex: 2,
-                            }}
-                          >
-                            <IconButton
+                        />
+                        <CardContent sx={{ pb: 0 }}>
+                          <Typography variant="subtitle1" fontWeight={600} noWrap>
+                            {movie.title}
+                          </Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                            <Rating
+                              value={movie.voteAverage / 2}
+                              precision={0.5}
                               size="small"
-                              sx={{
-                                bgcolor: 'background.paper',
-                                '&:hover': { bgcolor: 'error.light', color: 'white' },
-                              }}
-                              onClick={() => handleRemoveFavorite(movie.tmdbId)}
-                            >
-                              <Delete fontSize="small" />
-                            </IconButton>
+                              readOnly
+                            />
+                            <Typography variant="caption" color="text.secondary" ml={1}>
+                              ({movie.voteAverage?.toFixed(1)})
+                            </Typography>
                           </Box>
-                        </Card>
-                      </Grid>
-                    ))}
+                        </CardContent>
+                      </CardActionArea>
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          top: 8,
+                          right: 8,
+                          zIndex: 2,
+                        }}
+                      >
+                        <IconButton
+                          size="small"
+                          sx={{
+                            bgcolor: alpha(theme.palette.background.paper, 0.8),
+                            backdropFilter: 'blur(4px)',
+                            '&:hover': { bgcolor: theme.palette.error.main, color: 'white' },
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                          }}
+                          onClick={() => handleRemoveFavorite(movie.tmdbId)}
+                        >
+                          <Delete fontSize="small" />
+                        </IconButton>
+                      </Box>
+                    </Card>
                   </Grid>
-                ) : (
-                  <Alert severity="info" sx={{ mb: 2 }}>
-                    You don't have any favorite movies yet. Browse movies and click the heart icon to add them to your favorites!
-                  </Alert>
-                )}
-              </Box>
+                ))}
+              </Grid>
+            ) : (
+              <Alert 
+                severity="info" 
+                variant="outlined"
+                sx={{ 
+                  borderRadius: 2, 
+                  py: 2, 
+                  display: 'flex', 
+                  alignItems: 'center' 
+                }}
+              >
+                <Box sx={{ ml: 1 }}>
+                  <Typography variant="subtitle2" fontWeight={600}>No favorites yet</Typography>
+                  <Typography variant="body2">
+                    Browse movies and click the heart icon to add them to your favorites!
+                  </Typography>
+                  <Button 
+                    component={Link} 
+                    to="/" 
+                    variant="contained" 
+                    size="small" 
+                    sx={{ mt: 2, borderRadius: 2, textTransform: 'none' }}
+                  >
+                    Browse Movies
+                  </Button>
+                </Box>
+              </Alert>
             )}
           </Paper>
         </Grid>
       </Grid>
 
       {/* Logout Confirmation Dialog */}
-      <Dialog open={confirmLogout} onClose={() => setConfirmLogout(false)}>
-        <DialogTitle>Confirm Logout</DialogTitle>
+      <Dialog 
+        open={confirmLogout} 
+        onClose={() => setConfirmLogout(false)}
+        PaperProps={{ 
+          sx: {
+            borderRadius: 3, 
+            p: 1,
+            boxShadow: 24
+          }
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 700 }}>Confirm Logout</DialogTitle>
         <DialogContent>
           <DialogContentText>
             Are you sure you want to log out? You will need to log back in to access your profile and favorites.
           </DialogContentText>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setConfirmLogout(false)} color="primary">
+        <DialogActions sx={{ p: 2 }}>
+          <Button 
+            onClick={() => setConfirmLogout(false)} 
+            color="primary"
+            variant="outlined"
+            sx={{ borderRadius: 2, textTransform: 'none' }}
+          >
             Cancel
           </Button>
           <Button
@@ -378,6 +565,7 @@ const Profile = () => {
             }}
             color="error"
             variant="contained"
+            sx={{ borderRadius: 2, ml: 1, textTransform: 'none' }}
           >
             Logout
           </Button>
