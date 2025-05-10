@@ -34,7 +34,8 @@ import {
   TrendingUp,
   LocalMovies,
   Notifications,
-  Close as CloseIcon
+  Close as CloseIcon,
+  MovieFilter
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '@mui/material/styles';
@@ -301,6 +302,22 @@ const Navbar = ({ toggleThemeMode, mode }) => {
               startIcon={<HomeIcon />}
             >
               Home
+            </Button>
+            <Button 
+              color="inherit" 
+              component={Link} 
+              to="/collections"
+              sx={{ 
+                mx: 0.5, 
+                borderRadius: 2,
+                transition: 'all 0.2s',
+                '&:hover': {
+                  backgroundColor: alpha(theme.palette.secondary.main, 0.1),
+                }
+              }}
+              startIcon={<MovieFilter />}
+            >
+              Collections
             </Button>
           </Box>            {/* Search bar - desktop */}          
           <Box 

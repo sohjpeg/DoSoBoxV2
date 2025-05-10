@@ -27,7 +27,12 @@ import {
   Skeleton,
   CardActionArea,
   Snackbar,
-  Alert
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField
 } from '@mui/material';
 import { 
   Favorite, 
@@ -39,12 +44,14 @@ import {
   Share,
   Star,
   ArrowBack,
-  ScreenShare
+  ScreenShare,
+  MovieFilter
 } from '@mui/icons-material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { getMovieDetails } from '../utils/tmdbApi';
 import { useAuth } from '../context/AuthContext';
 import { checkIsFavorite, addToFavorites, removeFromFavorites } from '../utils/favoritesService';
+import { getCollections, createCollection, addMovieToCollection } from '../utils/collectionsService';
 
 const MovieDetails = () => {
   const { id } = useParams();
@@ -61,6 +68,11 @@ const MovieDetails = () => {
     message: '',
     severity: 'success'
   });
+  const [collections, setCollections] = useState([]);
+  const [collectionsLoading, setCollectionsLoading] = useState(false);
+  const [collectionsDialogOpen, setCollectionsDialogOpen] = useState(false);
+  const [newCollectionName, setNewCollectionName] = useState('');
+  const [creatingCollection, setCreatingCollection] = useState(false);
 
   useEffect(() => {
     // Scroll to top when the component mounts
@@ -167,6 +179,62 @@ const MovieDetails = () => {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return `${hours}h ${mins}m`;
+  };
+
+  const fetchCollections = async () => {
+    if (!currentUser) return;
+    setCollectionsLoading(true);
+    try {
+      const data = await getCollections();
+      setCollections(data);
+    } catch (err) {
+      setSnackbar({ open: true, message: 'Error loading collections', severity: 'error' });
+    } finally {
+      setCollectionsLoading(false);
+    }
+  };
+
+  const handleOpenCollectionsDialog = () => {
+    setCollectionsDialogOpen(true);
+    fetchCollections();
+  };
+
+  const handleCloseCollectionsDialog = () => {
+    setCollectionsDialogOpen(false);
+    setNewCollectionName('');
+  };
+
+  const handleCreateCollection = async () => {
+    if (!newCollectionName.trim()) return;
+    setCreatingCollection(true);
+    try {
+      await createCollection(newCollectionName.trim());
+      setNewCollectionName('');
+      fetchCollections();
+      setSnackbar({ open: true, message: 'Collection created!', severity: 'success' });
+    } catch (err) {
+      setSnackbar({ open: true, message: 'Error creating collection', severity: 'error' });
+    } finally {
+      setCreatingCollection(false);
+    }
+  };
+
+  const handleAddToCollection = async (collectionId) => {
+    try {
+      // Map movie.id to tmdbId for backend compatibility
+      const movieForCollection = {
+        tmdbId: movie.id,
+        title: movie.title,
+        poster: movie.poster,
+        voteAverage: movie.voteAverage,
+        releaseDate: movie.releaseDate
+      };
+      await addMovieToCollection(collectionId, movieForCollection);
+      setSnackbar({ open: true, message: `Added to collection!`, severity: 'success' });
+      fetchCollections();
+    } catch (err) {
+      setSnackbar({ open: true, message: 'Error adding to collection', severity: 'error' });
+    }
   };
 
   if (loading) {
@@ -487,6 +555,20 @@ const MovieDetails = () => {
                   >
                     Watch Now
                   </Button>
+
+                  {/* Add to Collection button */}
+                  <Box sx={{ ml: 1 }}>
+                    <Tooltip title={currentUser ? 'Add to collection' : 'Login to use collections'}>
+                      <IconButton
+                        onClick={handleOpenCollectionsDialog}
+                        color="secondary"
+                        disabled={!currentUser}
+                        sx={{ bgcolor: alpha(theme.palette.background.paper, 0.3), '&:hover': { bgcolor: alpha(theme.palette.background.paper, 0.5) } }}
+                      >
+                        <MovieFilter />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
                 </Box>
               </Box>
             </Box>
@@ -817,6 +899,52 @@ const MovieDetails = () => {
           </Grid>
         </Grid>
       </Container>
+
+      {/* Collections Dialog */}
+      <Dialog open={collectionsDialogOpen} onClose={handleCloseCollectionsDialog} maxWidth="xs" fullWidth>
+        <DialogTitle>My Collections</DialogTitle>
+        <DialogContent>
+          {collectionsLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <List>
+              {collections.length === 0 && (
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  No collections yet. Create one below!
+                </Typography>
+              )}
+              {collections.map((col) => (
+                <ListItem key={col._id} secondaryAction={
+                  <Button size="small" variant="contained" onClick={() => handleAddToCollection(col._id)}>
+                    Add
+                  </Button>
+                }>
+                  <ListItemText primary={col.name} />
+                </ListItem>
+              ))}
+            </List>
+          )}
+          <Divider sx={{ my: 2 }} />
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <TextField
+              label="New Collection"
+              value={newCollectionName}
+              onChange={e => setNewCollectionName(e.target.value)}
+              fullWidth
+              size="small"
+              disabled={creatingCollection}
+            />
+            <Button onClick={handleCreateCollection} variant="outlined" disabled={creatingCollection || !newCollectionName.trim()}>
+              {creatingCollection ? <CircularProgress size={20} /> : 'Create'}
+            </Button>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseCollectionsDialog}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

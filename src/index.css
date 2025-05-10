@@ -29,14 +29,24 @@ a:hover {
 body {
   margin: 0;
   padding: 0;
-  min-width: 320px;
+  min-width: 100vw;
   min-height: 100vh;
+  width: 100vw;
+  background: var(--mui-palette-background-default, #242424);
+  /* Remove forced centering */
 }
 
 #root {
   min-height: 100vh;
+  width: 100vw;
   display: flex;
   flex-direction: column;
+  background: inherit;
+  /* Remove forced max-width and padding that centers content */
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  text-align: initial;
 }
 
 h1 {
@@ -89,35 +99,43 @@ button:focus-visible {
 }
 
 /* Responsive containers */
-.container {
+.container, .MuiContainer-root {
   width: 100%;
-  padding-right: 15px;
-  padding-left: 15px;
-  margin-right: auto;
-  margin-left: auto;
+  max-width: 1200px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  padding-left: 24px !important;
+  padding-right: 24px !important;
+}
+
+@media (max-width: 600px) {
+  .container, .MuiContainer-root {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
 }
 
 @media (min-width: 576px) {
   .container {
-    max-width: 540px;
+    max-width: 100vw;
   }
 }
 
 @media (min-width: 768px) {
   .container {
-    max-width: 720px;
+    max-width: 100vw;
   }
 }
 
 @media (min-width: 992px) {
   .container {
-    max-width: 960px;
+    max-width: 100vw;
   }
 }
 
 @media (min-width: 1200px) {
   .container {
-    max-width: 1140px;
+    max-width: 100vw;
   }
 }
 

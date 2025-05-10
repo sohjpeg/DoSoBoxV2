@@ -349,31 +349,33 @@ const Home = () => {
 
         {/* Movie Grid */}
         {!loading && !error && movies.length > 0 && (
-          <Grid container spacing={3}>
+          <Grid container spacing={2}>
             {movies.map((movie) => (
-              <Grid item xs={12} sm={6} md={4} lg={3} key={movie.id} className="fade-in">
+              <Grid item xs={6} sm={4} md={3} lg={2} key={movie.id} className="fade-in">
                 <Card 
                   className="movie-card" 
                   sx={{ 
-                    width: 270, // fixed width
-                    height: 500, // fixed height
+                    width: 170, // smaller width
+                    height: 320, // smaller height
                     display: 'flex', 
                     flexDirection: 'column',
                     borderRadius: 2,
                     transition: 'all 0.3s ease',
                     position: 'relative',
                     overflow: 'hidden',
-                    mx: 'auto', // center in grid
+                    mx: 'auto',
+                    bgcolor: theme.palette.background.paper,
+                    boxShadow: 3,
                     '&:hover': {
-                      transform: 'translateY(-8px)',
-                      boxShadow: `0 20px 40px ${alpha(theme.palette.primary.main, 0.15)}`
+                      transform: 'translateY(-8px) scale(1.04)',
+                      boxShadow: `0 12px 32px ${alpha(theme.palette.primary.main, 0.18)}`
                     },
                     '&:hover .movie-overlay': {
                       opacity: 1
                     }
                   }}
                 >
-                  <Box sx={{ position: 'relative', width: '100%', aspectRatio: '2/3', minHeight: 0, maxHeight: 360, flexShrink: 0 }}>
+                  <Box sx={{ position: 'relative', width: '100%', aspectRatio: '2/3', minHeight: 0, maxHeight: 220, flexShrink: 0 }}>
                     <CardMedia
                       component="img"
                       image={movie.poster || 'https://via.placeholder.com/300x450?text=No+Image'}
@@ -384,7 +386,7 @@ const Home = () => {
                         objectFit: 'cover',
                         aspectRatio: '2/3',
                         minHeight: 0,
-                        maxHeight: 360,
+                        maxHeight: 220,
                         background: '#222',
                         display: 'block',
                         borderRadius: 0
@@ -398,14 +400,14 @@ const Home = () => {
                         left: 0,
                         right: 0,
                         bottom: 0,
-                        bgcolor: alpha(theme.palette.background.paper, 0.8),
+                        bgcolor: alpha(theme.palette.background.paper, 0.92),
                         display: 'flex',
                         flexDirection: 'column',
                         justifyContent: 'center',
                         alignItems: 'center',
                         opacity: 0,
                         transition: 'opacity 0.3s ease',
-                        p: 2
+                        p: 1
                       }}
                     >
                       <Typography 
@@ -413,13 +415,14 @@ const Home = () => {
                         color="text.primary" 
                         align="center"
                         sx={{
-                          mb: 2,
+                          mb: 1,
                           display: '-webkit-box',
                           overflow: 'hidden',
                           WebkitBoxOrient: 'vertical',
-                          WebkitLineClamp: 6,
-                          minHeight: '5.5em',
-                          maxHeight: '7em'
+                          WebkitLineClamp: 4,
+                          minHeight: '3.5em',
+                          maxHeight: '4.5em',
+                          fontSize: '0.85rem'
                         }}
                       >
                         {movie.overview || 'No overview available.'}
@@ -428,26 +431,29 @@ const Home = () => {
                         variant="contained" 
                         color="primary"
                         href={`/movie/${movie.id}`}
+                        size="small"
+                        sx={{ fontWeight: 600, borderRadius: 2, fontSize: '0.9rem', px: 2, py: 0.5 }}
                       >
                         View Details
                       </Button>
                     </Box>
-                  </Box>                  <CardContent sx={{ flexGrow: 1, pb: 1, pt: 2, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: 0 }}>
+                  </Box>
+                  <CardContent sx={{ flexGrow: 1, pb: 1, pt: 1.5, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: 0 }}>
                     <Typography 
                       gutterBottom 
-                      variant="h6" 
+                      variant="subtitle1" 
                       component="div"
                       sx={{
                         fontWeight: 600,
-                        fontSize: '1.1rem',
+                        fontSize: '1rem',
                         display: '-webkit-box',
                         overflow: 'hidden',
                         WebkitBoxOrient: 'vertical',
                         WebkitLineClamp: 2,
                         lineHeight: 1.2,
-                        minHeight: '2.4em',
-                        maxHeight: '2.4em',
-                        mb: 1
+                        minHeight: '2.2em',
+                        maxHeight: '2.2em',
+                        mb: 0.5
                       }}
                     >
                       {movie.title}
@@ -460,11 +466,11 @@ const Home = () => {
                           size="small"
                           readOnly
                         />
-                        <Typography variant="body2" color="text.secondary" ml={1}>
+                        <Typography variant="body2" color="text.secondary" ml={0.5} sx={{ fontSize: '0.85rem' }}>
                           {(movie.voteAverage / 2).toFixed(1)}
                         </Typography>
                       </Box>
-                      <Typography variant="body2" color="text.secondary">
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.85rem' }}>
                         {movie.releaseDate && new Date(movie.releaseDate).getFullYear()}
                       </Typography>
                     </Box>
