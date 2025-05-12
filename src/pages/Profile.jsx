@@ -26,7 +26,11 @@ import {
   DialogActions,
   Chip,
   Divider,
-  useMediaQuery
+  useMediaQuery,
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemText
 } from '@mui/material';
 import { 
   Edit, 
@@ -43,6 +47,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { getFavorites, removeFromFavorites } from '../utils/favoritesService';
 import { useTheme, alpha } from '@mui/material/styles';
+import { getUserReviews } from '../utils/reviewsService';
 
 const Profile = () => {
   const { currentUser, updateProfile, logout } = useAuth();
@@ -55,6 +60,7 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [tabValue, setTabValue] = useState(0);
   const [confirmLogout, setConfirmLogout] = useState(false);
+  const [reviews, setReviews] = useState([]);
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -89,6 +95,17 @@ const Profile = () => {
     };
 
     loadFavorites();
+
+    // Load user reviews
+    const loadReviews = async () => {
+      try {
+        const reviewsData = await getUserReviews(currentUser.id);
+        setReviews(reviewsData);
+      } catch (error) {
+        setReviews([]);
+      }
+    };
+    loadReviews();
 
     // Cleanup
     return () => {
@@ -526,6 +543,69 @@ const Profile = () => {
                   </Button>
                 </Box>
               </Alert>
+            )}
+          </Paper>
+
+          {/* My Reviews Section */}
+          <Paper 
+            elevation={3}
+            sx={{ 
+              p: { xs: 3, sm: 4 }, 
+              borderRadius: 4,
+              mt: 4,
+              backgroundImage: 'linear-gradient(to bottom, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 100%)',
+              backdropFilter: 'blur(20px)',
+              boxShadow: theme.palette.mode === 'dark' 
+                ? '0 8px 32px rgba(0, 0, 0, 0.3)'
+                : '0 8px 32px rgba(145, 158, 171, 0.24)'
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+              <MovieFilter color="primary" sx={{ mr: 1.5 }} />
+              <Typography variant="h6" fontWeight={700} color="primary.main">
+                My Reviews
+              </Typography>
+            </Box>
+            <Divider sx={{ mb: 3 }} />
+            {reviews.length === 0 ? (
+              <Alert severity="info" variant="outlined" sx={{ borderRadius: 2, py: 2, display: 'flex', alignItems: 'center' }}>
+                <Box sx={{ ml: 1 }}>
+                  <Typography variant="subtitle2" fontWeight={600}>No reviews yet</Typography>
+                  <Typography variant="body2">
+                    Leave a review on any movie and it will show up here!
+                  </Typography>
+                </Box>
+              </Alert>
+            ) : (
+              <List>
+                {reviews.map((review) => (
+                  <ListItem alignItems="flex-start" key={review._id} sx={{ mb: 2, borderRadius: 2, bgcolor: 'background.default', boxShadow: 1 }}>
+                    <ListItemAvatar>
+                      <Avatar src={currentUser.avatar || undefined} alt={currentUser.username} />
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Typography fontWeight={700}>
+                            <Link to={`/movie/${review.movie.tmdbId}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                              {review.movie.title}
+                            </Link>
+                          </Typography>
+                          <Rating value={review.rating} precision={0.5} size="small" readOnly sx={{ ml: 1 }} />
+                          <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                            {new Date(review.createdAt).toLocaleDateString()}
+                          </Typography>
+                        </Box>
+                      }
+                      secondary={
+                        <Typography variant="body2" color="text.primary" sx={{ whiteSpace: 'pre-line' }}>
+                          {review.text}
+                        </Typography>
+                      }
+                    />
+                  </ListItem>
+                ))}
+              </List>
             )}
           </Paper>
         </Grid>

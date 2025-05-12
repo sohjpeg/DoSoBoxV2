@@ -286,7 +286,7 @@ const Navbar = ({ toggleThemeMode, mode }) => {
           </Typography>
 
           {/* Navigation links - desktop */}
-          <Box sx={{ flexGrow: 1, display: { xs: 'none', sm: 'flex' } }}>
+          <Box sx={{ flexGrow: 1, display: { xs: 'none', sm: 'flex' }, alignItems: 'center', justifyContent: 'center' }}>
             <Button 
               color="inherit" 
               component={Link} 
@@ -319,16 +319,18 @@ const Navbar = ({ toggleThemeMode, mode }) => {
             >
               Collections
             </Button>
-          </Box>            {/* Search bar - desktop */}          
+          </Box>
+          {/* Centered search bar - desktop */}
           <Box 
             component="form" 
             onSubmit={handleSearchSubmit}
             sx={{ 
               display: { xs: 'none', sm: 'flex' },
               flexGrow: 1,
+              justifyContent: 'center',
+              alignItems: 'center',
               mr: 1,
-              ml: 2,
-              alignItems: 'center'
+              ml: 2
             }}
           >
             <Search sx={{ width: '100%', maxWidth: 400 }}>

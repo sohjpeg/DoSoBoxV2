@@ -83,14 +83,14 @@ const CollectionsPage = () => {
   const handleCloseSnackbar = () => setSnackbar({ ...snackbar, open: false });
 
   return (
-    <Container maxWidth={false} disableGutters sx={{ px: { xs: 1, sm: 3, md: 6 }, py: 6, minHeight: '80vh', background: `linear-gradient(120deg, ${theme => theme.palette.background.default} 60%, ${theme => theme.palette.secondary.light} 100%)` }}>
-      <Box sx={{ maxWidth: 1400, mx: 'auto' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 5, gap: 2 }}>
-          <MovieFilter color="primary" sx={{ fontSize: 40 }} />
-          <Typography variant="h3" fontWeight={800} flexGrow={1} sx={{ letterSpacing: 1 }}>
+    <Container maxWidth={false} disableGutters sx={{ px: { xs: 1, sm: 2, md: 4 }, py: { xs: 3, md: 6 }, minHeight: '100vh', bgcolor: theme => theme.palette.background.default }}>
+      <Box sx={{ width: '100%', minHeight: '100vh', maxWidth: '1800px', mx: 'auto', background: `linear-gradient(120deg, ${theme => theme.palette.background.default} 60%, ${theme => theme.palette.secondary.light} 100%)`, borderRadius: 4, boxShadow: 4, p: { xs: 1, sm: 3, md: 6 } }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 4, gap: 2 }}>
+          <MovieFilter color="primary" sx={{ fontSize: 38 }} />
+          <Typography variant="h3" fontWeight={900} flexGrow={1} sx={{ letterSpacing: 2, fontFamily: 'Montserrat, sans-serif' }}>
             My Collections
           </Typography>
-          <Button variant="contained" startIcon={<Add />} onClick={handleOpenDialog} sx={{ borderRadius: 3, fontWeight: 700, fontSize: '1.1rem', px: 3, py: 1 }}>
+          <Button variant="contained" startIcon={<Add />} onClick={handleOpenDialog} sx={{ borderRadius: 3, fontWeight: 700, fontSize: '1.1rem', px: 3, py: 1, boxShadow: 2 }}>
             New Collection
           </Button>
         </Box>
@@ -99,7 +99,7 @@ const CollectionsPage = () => {
             <CircularProgress size={48} />
           </Box>
         ) : (
-          <Grid container spacing={4}>
+          <Grid container spacing={3}>
             {collections.length === 0 ? (
               <Grid item xs={12}>
                 <Paper elevation={0} sx={{ p: 5, textAlign: 'center', borderRadius: 4, bgcolor: 'background.paper', boxShadow: 2 }}>
@@ -123,7 +123,7 @@ const CollectionsPage = () => {
                     }}
                     onClick={() => handleSelectCollection(col)}
                   >
-                    <Typography fontWeight={700} variant="h6" sx={{ mb: 1 }}>{col.name}</Typography>
+                    <Typography fontWeight={800} variant="h6" sx={{ mb: 1, fontFamily: 'Montserrat, sans-serif' }}>{col.name}</Typography>
                     <Typography color="text.secondary" variant="body2">{col.movies?.length ? `${col.movies.length} movies` : 'No movies yet'}</Typography>
                   </Paper>
                 </Grid>
@@ -152,9 +152,9 @@ const CollectionsPage = () => {
           </DialogActions>
         </Dialog>
         {selectedCollection && (
-          <Box sx={{ mt: 8 }}>
-            <Typography variant="h4" fontWeight={800} mb={3} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <MovieFilter sx={{ fontSize: 32 }} />
+          <Box sx={{ mt: 7 }}>
+            <Typography variant="h4" fontWeight={900} mb={3} sx={{ display: 'flex', alignItems: 'center', gap: 1, fontFamily: 'Montserrat, sans-serif' }}>
+              <MovieFilter sx={{ fontSize: 30 }} />
               {selectedCollection.name}
               <Typography variant="body1" color="text.secondary" sx={{ ml: 2 }}>{collectionMovies.length} movies</Typography>
             </Typography>
@@ -167,23 +167,32 @@ const CollectionsPage = () => {
                 <Typography color="text.secondary" variant="h6">No movies in this collection.</Typography>
               </Paper>
             ) : (
-              <Grid container spacing={4}>
+              <Grid container spacing={2}>
                 {collectionMovies.map(movie => (
-                  <Grid item xs={12} sm={6} md={4} lg={3} key={movie._id}>
-                    <Card sx={{ height: '100%', position: 'relative', borderRadius: 4, boxShadow: 6, transition: 'transform 0.2s', '&:hover': { transform: 'scale(1.04)' } }}>
+                  <Grid item xs={6} sm={4} md={3} lg={2} key={movie._id}>
+                    <Card sx={{ height: 220, position: 'relative', borderRadius: 3, boxShadow: 4, transition: 'transform 0.2s', '&:hover': { transform: 'scale(1.04)' }, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', overflow: 'hidden', background: `linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.25) 100%)` }}>
                       <CardMedia
                         component="img"
-                        height="300"
-                        image={movie.poster || 'https://via.placeholder.com/500x750?text=No+Poster'}
+                        height="140"
+                        image={movie.poster || 'https://via.placeholder.com/300x450?text=No+Poster'}
                         alt={movie.title}
-                        sx={{ objectFit: 'cover', borderTopLeftRadius: 16, borderTopRightRadius: 16 }}
+                        sx={{ objectFit: 'cover', borderTopLeftRadius: 12, borderTopRightRadius: 12, width: '100%' }}
                       />
-                      <CardContent sx={{ pb: 1 }}>
-                        <Typography variant="subtitle1" fontWeight={700} noWrap>{movie.title}</Typography>
+                      <CardContent sx={{ py: 1, px: 1.5, flexGrow: 0 }}>
+                        <Typography variant="subtitle2" fontWeight={700} noWrap sx={{ fontFamily: 'Montserrat, sans-serif', fontSize: '1rem' }}>{movie.title}</Typography>
+                        <Rating
+                          value={movie.voteAverage ? (Math.round(movie.voteAverage * 10) / 10) / 2 : 0}
+                          precision={0.5}
+                          size="small"
+                          readOnly
+                        />
+                        <Typography variant="caption" color="text.secondary" ml={1}>
+                          {movie.voteAverage ? movie.voteAverage.toFixed(1) : '0.0'}
+                        </Typography>
                       </CardContent>
                       <IconButton
                         size="small"
-                        sx={{ position: 'absolute', top: 12, right: 12, bgcolor: 'background.paper', '&:hover': { bgcolor: 'error.main', color: 'white' }, boxShadow: 2 }}
+                        sx={{ position: 'absolute', top: 8, right: 8, bgcolor: 'background.paper', '&:hover': { bgcolor: 'error.main', color: 'white' }, boxShadow: 2 }}
                         onClick={() => handleRemoveMovie(movie._id)}
                       >
                         <Delete fontSize="small" />
