@@ -25,7 +25,11 @@ import {
   Theaters as TheatersIcon,
   TrendingUp as TrendingUpIcon,
   Favorite as FavoriteIcon,
-  LocalFireDepartment as HotIcon
+  LocalFireDepartment as HotIcon,
+  Star as StarIcon,
+  Upcoming as UpcomingIcon,
+  LiveTv as NowPlayingIcon,
+  Recommend as RecommendIcon
 } from '@mui/icons-material';
 import { 
   getTrendingMovies, 
@@ -36,6 +40,8 @@ import {
   getUpcomingMovies,
   getNowPlayingMovies
 } from '../utils/tmdbApi';
+import MovieCard from '../components/MovieCard';
+import MovieRow from '../components/MovieRow';
 
 const Home = () => {
   const theme = useTheme();
@@ -48,6 +54,20 @@ const Home = () => {
   const [totalPages, setTotalPages] = useState(0);
   const [featuredMovie, setFeaturedMovie] = useState(null);
   const [featuredLoading, setFeaturedLoading] = useState(true);
+  
+  // New state for different categories
+  const [trendingMovies, setTrendingMovies] = useState([]);
+  const [popularMovies, setPopularMovies] = useState([]);
+  const [topRatedMovies, setTopRatedMovies] = useState([]);
+  const [upcomingMovies, setUpcomingMovies] = useState([]);
+  const [nowPlayingMovies, setNowPlayingMovies] = useState([]);
+  const [categoryLoading, setCategoryLoading] = useState({
+    trending: true,
+    popular: true,
+    topRated: true,
+    upcoming: true,
+    nowPlaying: true
+  });
   
   const searchQuery = searchParams.get('search') || '';
   const filterParam = searchParams.get('filter') || '';
@@ -75,6 +95,51 @@ const Home = () => {
       setFeaturedMovie(null);
       setFeaturedLoading(false);
     }
+  }, [searchQuery, filterParam]);
+  
+  // New useEffect to fetch movie categories for the homepage
+  useEffect(() => {
+    // Only fetch categories for homepage (not search or filter pages)
+    if (searchQuery || filterParam) return;
+    
+    const fetchMovieCategories = async () => {
+      try {
+        // Fetch trending movies
+        setCategoryLoading(prev => ({ ...prev, trending: true }));
+        const trendingData = await getTrendingMovies('week', 1);
+        setTrendingMovies(trendingData.results);
+        setCategoryLoading(prev => ({ ...prev, trending: false }));
+        
+        // Fetch popular movies
+        setCategoryLoading(prev => ({ ...prev, popular: true }));
+        const popularData = await getPopularMovies(1);
+        setPopularMovies(popularData.results);
+        setCategoryLoading(prev => ({ ...prev, popular: false }));
+        
+        // Fetch top rated movies
+        setCategoryLoading(prev => ({ ...prev, topRated: true }));
+        const topRatedData = await getTopRatedMovies(1);
+        setTopRatedMovies(topRatedData.results);
+        setCategoryLoading(prev => ({ ...prev, topRated: false }));
+        
+        // Fetch upcoming movies
+        setCategoryLoading(prev => ({ ...prev, upcoming: true }));
+        const upcomingData = await getUpcomingMovies(1);
+        setUpcomingMovies(upcomingData.results);
+        setCategoryLoading(prev => ({ ...prev, upcoming: false }));
+        
+        // Fetch now playing movies
+        setCategoryLoading(prev => ({ ...prev, nowPlaying: true }));
+        const nowPlayingData = await getNowPlayingMovies(1);
+        setNowPlayingMovies(nowPlayingData.results);
+        setCategoryLoading(prev => ({ ...prev, nowPlaying: false }));
+        
+      } catch (error) {
+        console.error('Error fetching movie categories:', error);
+      }
+    };
+    
+    fetchMovieCategories();
   }, [searchQuery, filterParam]);
 
   // Fetch movies based on parameters
@@ -287,222 +352,153 @@ const Home = () => {
 
       {/* Main Content */}
       <Container maxWidth="xl" sx={{ py: 4 }}>
-        {/* Title Section */}
-        <Box mb={4}>
-          <Typography 
-            variant="h4" 
-            component="h2" 
-            gutterBottom 
-            sx={{ 
-              fontWeight: 700,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1
-            }}
-          >
-            {filterParam === 'popular' ? (
-              <TheatersIcon fontSize="large" color="primary" />
-            ) : !filterParam ? (
-              <TrendingUpIcon fontSize="large" color="primary" />
-            ) : (
-              null
-            )}
-            {getPageTitle()}
-          </Typography>
-  
-        </Box>
+        {/* For Search or Filter Results */}
+        {(searchQuery || filterParam) && (
+          <>
+            {/* Title Section */}
+            <Box mb={4}>
+              <Typography 
+                variant="h4" 
+                component="h2" 
+                gutterBottom 
+                sx={{ 
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1
+                }}
+              >
+                {filterParam === 'popular' ? (
+                  <TheatersIcon fontSize="large" color="primary" />
+                ) : !filterParam ? (
+                  <TrendingUpIcon fontSize="large" color="primary" />
+                ) : (
+                  null
+                )}
+                {getPageTitle()}
+              </Typography>
+            </Box>
 
-        {/* Loading State */}
-        {loading && (
-          <Box sx={{ py: 8 }}>
-            <Grid container spacing={3}>
-              {Array.from(new Array(8)).map((_, index) => (
-                <Grid item xs={12} sm={6} md={4} lg={3} key={index}>                  <Card sx={{ height: 500, width: '100%', borderRadius: 2 }}>
-                    <Skeleton variant="rectangular" height={350} animation="wave" />
-                    <CardContent>
-                      <Skeleton variant="text" height={30} width="80%" animation="wave" />
-                      <Skeleton variant="text" height={20} width="60%" animation="wave" />
-                      <Skeleton variant="text" height={20} width="40%" animation="wave" sx={{ mt: 2 }} />
-                    </CardContent>
-                  </Card>
+            {/* Loading State */}
+            {loading && (
+              <Box sx={{ py: 8 }}>
+                <Grid container spacing={3}>
+                  {Array.from(new Array(8)).map((_, index) => (
+                    <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
+                      <Card sx={{ height: 500, width: '100%', borderRadius: 2 }}>
+                        <Skeleton variant="rectangular" height={350} animation="wave" />
+                        <CardContent>
+                          <Skeleton variant="text" height={30} width="80%" animation="wave" />
+                          <Skeleton variant="text" height={20} width="60%" animation="wave" />
+                          <Skeleton variant="text" height={20} width="40%" animation="wave" sx={{ mt: 2 }} />
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  ))}
                 </Grid>
-              ))}
-            </Grid>
-          </Box>
-        )}
+              </Box>
+            )}
 
-        {/* Error State */}
-        {error && !loading && (
-          <Box textAlign="center" my={8}>
-            <Typography color="error">{error}</Typography>
-          </Box>
-        )}
+            {/* Error State */}
+            {error && !loading && (
+              <Box textAlign="center" my={8}>
+                <Typography color="error">{error}</Typography>
+              </Box>
+            )}
 
-        {/* Empty Results */}
-        {!loading && !error && movies.length === 0 && (
-          <Box textAlign="center" my={8}>
-            <Typography variant="h6">
-              No movies found. Try a different search.
-            </Typography>
-          </Box>
-        )}
+            {/* Empty Results */}
+            {!loading && !error && movies.length === 0 && (
+              <Box textAlign="center" my={8}>
+                <Typography variant="h6">
+                  No movies found. Try a different search.
+                </Typography>
+              </Box>
+            )}
 
-        {/* Movie Grid */}
-        {!loading && !error && movies.length > 0 && (
-          <Grid container spacing={2}>
-            {movies.map((movie) => (
-              <Grid item xs={6} sm={4} md={3} lg={2} key={movie.id} className="fade-in">
-                <Card 
-                  className="movie-card" 
-                  sx={{ 
-                    width: 170, // smaller width
-                    height: 320, // smaller height
-                    display: 'flex', 
-                    flexDirection: 'column',
-                    borderRadius: 2,
-                    transition: 'all 0.3s ease',
-                    position: 'relative',
-                    overflow: 'hidden',
-                    mx: 'auto',
-                    bgcolor: theme.palette.background.paper,
-                    boxShadow: 3,
-                    '&:hover': {
-                      transform: 'translateY(-8px) scale(1.04)',
-                      boxShadow: `0 12px 32px ${alpha(theme.palette.primary.main, 0.18)}`
-                    },
-                    '&:hover .movie-overlay': {
-                      opacity: 1
+            {/* Movie Grid */}
+            {!loading && !error && movies.length > 0 && (
+              <Grid container spacing={2}>
+                {movies.map((movie) => (
+                  <Grid item xs={6} sm={4} md={3} lg={2} key={movie.id} className="fade-in">
+                    <MovieCard 
+                      movie={movie}
+                      width="100%"
+                      height={340}
+                    />
+                  </Grid>
+                ))}
+              </Grid>
+            )}
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <Box 
+                display="flex" 
+                justifyContent="center" 
+                mt={6}
+                sx={{ '& .MuiPagination-ul': { flexWrap: 'nowrap' } }}
+              >
+                <Pagination 
+                  count={totalPages} 
+                  page={page}
+                  onChange={handlePageChange}
+                  color="primary"
+                  siblingCount={isMobile ? 0 : 1}
+                  size={isMobile ? 'small' : 'medium'}
+                  showFirstButton
+                  showLastButton
+                  sx={{
+                    '& .MuiPaginationItem-root': {
+                      borderRadius: 2
                     }
                   }}
-                >
-                  <Box sx={{ position: 'relative', width: '100%', aspectRatio: '2/3', minHeight: 0, maxHeight: 220, flexShrink: 0 }}>
-                    <CardMedia
-                      component="img"
-                      image={movie.poster || 'https://via.placeholder.com/300x450?text=No+Image'}
-                      alt={movie.title}
-                      sx={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        aspectRatio: '2/3',
-                        minHeight: 0,
-                        maxHeight: 220,
-                        background: '#222',
-                        display: 'block',
-                        borderRadius: 0
-                      }}
-                    />
-                    <Box 
-                      className="movie-overlay"
-                      sx={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        bgcolor: alpha(theme.palette.background.paper, 0.92),
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        opacity: 0,
-                        transition: 'opacity 0.3s ease',
-                        p: 1
-                      }}
-                    >
-                      <Typography 
-                        variant="body2" 
-                        color="text.primary" 
-                        align="center"
-                        sx={{
-                          mb: 1,
-                          display: '-webkit-box',
-                          overflow: 'hidden',
-                          WebkitBoxOrient: 'vertical',
-                          WebkitLineClamp: 4,
-                          minHeight: '3.5em',
-                          maxHeight: '4.5em',
-                          fontSize: '0.85rem'
-                        }}
-                      >
-                        {movie.overview || 'No overview available.'}
-                      </Typography>
-                      <Button 
-                        variant="contained" 
-                        color="primary"
-                        href={`/movie/${movie.id}`}
-                        size="small"
-                        sx={{ fontWeight: 600, borderRadius: 2, fontSize: '0.9rem', px: 2, py: 0.5 }}
-                      >
-                        View Details
-                      </Button>
-                    </Box>
-                  </Box>
-                  <CardContent sx={{ flexGrow: 1, pb: 1, pt: 1.5, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: 0 }}>
-                    <Typography 
-                      gutterBottom 
-                      variant="subtitle1" 
-                      component="div"
-                      sx={{
-                        fontWeight: 600,
-                        fontSize: '1rem',
-                        display: '-webkit-box',
-                        overflow: 'hidden',
-                        WebkitBoxOrient: 'vertical',
-                        WebkitLineClamp: 2,
-                        lineHeight: 1.2,
-                        minHeight: '2.2em',
-                        maxHeight: '2.2em',
-                        mb: 0.5
-                      }}
-                    >
-                      {movie.title}
-                    </Typography>
-                    <Box display="flex" alignItems="center" justifyContent="space-between" sx={{ mt: 'auto' }}>
-                      <Box display="flex" alignItems="center">
-                        <Rating
-                          value={movie.voteAverage / 2}
-                          precision={0.5}
-                          size="small"
-                          readOnly
-                        />
-                        <Typography variant="body2" color="text.secondary" ml={0.5} sx={{ fontSize: '0.85rem' }}>
-                          {(movie.voteAverage / 2).toFixed(1)}
-                        </Typography>
-                      </Box>
-                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.85rem' }}>
-                        {movie.releaseDate && new Date(movie.releaseDate).getFullYear()}
-                      </Typography>
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
+                />
+              </Box>
+            )}
+          </>
         )}
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <Box 
-            display="flex" 
-            justifyContent="center" 
-            mt={6}
-            sx={{ '& .MuiPagination-ul': { flexWrap: 'nowrap' } }}
-          >
-            <Pagination 
-              count={totalPages} 
-              page={page}
-              onChange={handlePageChange}
-              color="primary"
-              siblingCount={isMobile ? 0 : 1}
-              size={isMobile ? 'small' : 'medium'}
-              showFirstButton
-              showLastButton
-              sx={{
-                '& .MuiPaginationItem-root': {
-                  borderRadius: 2
-                }
-              }}
+        {/* For Homepage with Category Rows */}
+        {!searchQuery && !filterParam && (
+          <Box>
+            {/* Trending Movies Row */}
+            <MovieRow 
+              title="Trending Now"
+              movies={trendingMovies}
+              loading={categoryLoading.trending}
+              icon={<TrendingUpIcon color="primary" />}
+            />
+            
+            {/* Popular Movies Row */}
+            <MovieRow 
+              title="Popular Movies"
+              movies={popularMovies}
+              loading={categoryLoading.popular}
+              icon={<TheatersIcon color="primary" />}
+            />
+            
+            {/* Top Rated Movies Row */}
+            <MovieRow 
+              title="Top Rated"
+              movies={topRatedMovies}
+              loading={categoryLoading.topRated}
+              icon={<StarIcon color="primary" />}
+            />
+            
+            {/* Now Playing Movies Row */}
+            <MovieRow 
+              title="Now Playing"
+              movies={nowPlayingMovies}
+              loading={categoryLoading.nowPlaying}
+              icon={<NowPlayingIcon color="primary" />}
+            />
+            
+            {/* Upcoming Movies Row */}
+            <MovieRow 
+              title="Coming Soon"
+              movies={upcomingMovies}
+              loading={categoryLoading.upcoming}
+              icon={<UpcomingIcon color="primary" />}
             />
           </Box>
         )}
