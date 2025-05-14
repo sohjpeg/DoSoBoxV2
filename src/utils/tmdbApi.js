@@ -188,3 +188,26 @@ export const getNowPlayingMovies = async (page = 1) => {
     throw error;
   }
 };
+
+// Get movies by genre (for animated movies)
+export const getMoviesByGenre = async (genreId, page = 1) => {
+  try {
+    const response = await axios.get(`${BASE_URL}/discover/movie`, {
+      params: {
+        api_key: TMDB_API_KEY,
+        with_genres: genreId,
+        page,
+        sort_by: 'popularity.desc'
+      }
+    });
+
+    return {
+      results: response.data.results.map(formatMovie),
+      totalPages: response.data.total_pages,
+      currentPage: response.data.page
+    };
+  } catch (error) {
+    console.error('Error fetching movies by genre:', error);
+    throw error;
+  }
+};

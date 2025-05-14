@@ -226,7 +226,7 @@ const CollectionsPage = () => {
                           <Grid item xs={6} sm={4} md={3} lg={2} key={movie._id}>
                             <Card 
                               sx={{ 
-                                height: 220, 
+                                height: 200, 
                                 position: 'relative', 
                                 borderRadius: 3, 
                                 boxShadow: 4, 
@@ -244,14 +244,13 @@ const CollectionsPage = () => {
                               >
                                 <CardMedia
                                   component="img"
-                                  height="140"
+                                  height="160"
                                   image={movie.poster || 'https://via.placeholder.com/300x450?text=No+Poster'}
                                   alt={movie.title}
                                   sx={{ objectFit: 'cover', width: '100%' }}
                                 />
-                                <CardContent sx={{ py: 1, px: 1.5, flexGrow: 0 }}>
-                                  <Typography variant="subtitle2" fontWeight={700} noWrap sx={{ fontFamily: 'Montserrat, sans-serif', fontSize: '1rem' }}>{movie.title}</Typography>
-                                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <CardContent sx={{ py: 0.5, px: 1, flexGrow: 0 }}>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     <Rating
                                       value={movie.voteAverage ? (Math.round(movie.voteAverage * 10) / 10) / 2 : 0}
                                       precision={0.5}

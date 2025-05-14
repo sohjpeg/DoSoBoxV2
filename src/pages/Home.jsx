@@ -16,7 +16,7 @@ import {
   getTopRatedMovies,
   getPopularMovies,
   getGenres,
-  searchMovies,
+  getMoviesByGenre,
 } from '../utils/tmdbApi';
 
 const CARD_WIDTH = 260;
@@ -143,24 +143,26 @@ const Home = () => {
     const fetchAll = async () => {
       setLoading(true);
       try {
-        const [trendingRes, topRatedRes, popularRes, genres] = await Promise.all([
+        // Fetch genres first to get animation genre ID
+        const genres = await getGenres();
+        const animationGenre = genres.find(g => g.name.toLowerCase() === 'animation');
+        const animationGenreId = animationGenre ? animationGenre.id : null;
+        
+        // Fetch all movie data in parallel
+        const [trendingRes, topRatedRes, popularRes, animatedRes] = await Promise.all([
           getTrendingMovies('week', 1),
           getTopRatedMovies(1),
           getPopularMovies(1),
-          getGenres(),
+          // If animation genre found, fetch animated movies using the genre ID
+          animationGenreId ? getMoviesByGenre(animationGenreId, 1) : { results: [] }
         ]);
+
         setTrending(trendingRes.results.slice(0, 16));
         setTopRated(topRatedRes.results.slice(0, 16));
         setPopular(popularRes.results.slice(0, 16));
-        // Find Animation genre id
-        const animationGenre = genres.find(g => g.name.toLowerCase() === 'animation');
-        if (animationGenre) {
-          const animatedRes = await searchMovies('', 1);
-          setAnimated(animatedRes.results.filter(m => m.genres && m.genres.some(g => g.id === animationGenre.id)).slice(0, 16));
-        } else {
-          setAnimated([]);
-        }
+        setAnimated(animatedRes.results.slice(0, 16));
       } catch (err) {
+        console.error('Error fetching movies:', err);
         setTrending([]);
         setTopRated([]);
         setPopular([]);
