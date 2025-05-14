@@ -1,508 +1,223 @@
-import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { 
-  Container, 
-  Grid, 
-  Typography, 
-  Box, 
-  Card, 
-  CardContent, 
-  CardMedia, 
-  CardActionArea,
-  Chip,
-  Pagination,
-  CircularProgress,
-  Rating,
-  useMediaQuery,
-  Paper,
-  Button,
-  Skeleton,
-  Divider,
-  Stack
-} from '@mui/material';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTheme, alpha } from '@mui/material/styles';
-import { 
-  Theaters as TheatersIcon,
-  TrendingUp as TrendingUpIcon,
-  Favorite as FavoriteIcon,
-  LocalFireDepartment as HotIcon,
-  Star as StarIcon,
-  Upcoming as UpcomingIcon,
-  LiveTv as NowPlayingIcon,
-  Recommend as RecommendIcon
-} from '@mui/icons-material';
-import { 
-  getTrendingMovies, 
-  searchMovies, 
+import {
+  Typography,
+  Box,
+  Card,
+  CardContent,
+  CardMedia,
+  Rating,
+  CircularProgress,
+  IconButton,
+} from '@mui/material';
+import { ArrowBackIos, ArrowForwardIos } from '@mui/icons-material';
+import {
+  getTrendingMovies,
+  getTopRatedMovies,
   getPopularMovies,
   getGenres,
-  getTopRatedMovies,
-  getUpcomingMovies,
-  getNowPlayingMovies
+  searchMovies,
 } from '../utils/tmdbApi';
-import MovieCard from '../components/MovieCard';
-import MovieRow from '../components/MovieRow';
+
+const CARD_WIDTH = 260;
+const CARD_HEIGHT = 400;
+const VISIBLE_CARDS = 4;
+
+const Section = ({ title, movies, scrollRef, onScrollLeft, onScrollRight }) => {
+  const theme = useTheme();
+  return (
+    <Box sx={{ mb: 7 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, pl: 2 }}>
+        <Typography variant="h5" sx={{ fontWeight: 800, color: '#fff', letterSpacing: 1.2, flex: 1 }}>{title}</Typography>
+        <IconButton onClick={onScrollLeft} sx={{ color: '#fff', mr: 1 }}><ArrowBackIos /></IconButton>
+        <IconButton onClick={onScrollRight} sx={{ color: '#fff' }}><ArrowForwardIos /></IconButton>
+      </Box>
+      <Box
+        ref={scrollRef}
+        sx={{
+          display: 'flex',
+          overflowX: 'auto',
+          gap: 3,
+          pl: 2,
+          pr: 2,
+          scrollBehavior: 'smooth',
+          '&::-webkit-scrollbar': { height: 10 },
+          '&::-webkit-scrollbar-thumb': { background: alpha(theme.palette.primary.main, 0.25), borderRadius: 5 },
+        }}
+      >
+        {movies.map((movie) => (
+          <Card
+            key={movie.id}
+            onClick={() => window.location.href = `/movie/${movie.id}`}
+            sx={{
+              minWidth: CARD_WIDTH,
+              maxWidth: CARD_WIDTH,
+              width: CARD_WIDTH,
+              height: CARD_HEIGHT,
+              display: 'flex',
+              flexDirection: 'column',
+              borderRadius: 4,
+              overflow: 'hidden',
+              bgcolor: 'rgba(255,255,255,0.08)',
+              boxShadow: '0 4px 32px rgba(0,0,0,0.18)',
+              cursor: 'pointer',
+              transition: 'transform 0.2s',
+              '&:hover': {
+                transform: 'translateY(-8px) scale(1.04)',
+                boxShadow: '0 12px 32px 0 rgba(0,0,0,0.22)',
+              },
+            }}
+          >
+            <CardMedia
+              component="img"
+              image={movie.poster || 'https://via.placeholder.com/300x450?text=No+Image'}
+              alt={movie.title}
+              sx={{
+                width: '100%',
+                height: 320,
+                objectFit: 'cover',
+                background: '#222',
+                display: 'block',
+              }}
+            />
+            <CardContent sx={{ flexGrow: 1, p: 2, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: 0 }}>
+              <Typography
+                variant="subtitle1"
+                sx={{
+                  fontWeight: 700,
+                  color: '#fff',
+                  fontSize: '1.08rem',
+                  mb: 0.5,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  display: '-webkit-box',
+                  WebkitBoxOrient: 'vertical',
+                  WebkitLineClamp: 2,
+                  height: '2.6em', // allow up to 2 lines, always visible
+                  whiteSpace: 'normal',
+                  lineHeight: 1.3,
+                }}
+              >
+                {movie.title}
+              </Typography>
+              <Box display="flex" alignItems="center" justifyContent="space-between">
+                <Box display="flex" alignItems="center">
+                  <Rating
+                    value={movie.voteAverage / 2}
+                    precision={0.5}
+                    size="small"
+                    readOnly
+                    sx={{ color: theme.palette.primary.main }}
+                  />
+                  <Typography variant="body2" color="#fff" ml={0.5} sx={{ fontSize: '0.98rem', fontWeight: 500 }}>
+                    {(movie.voteAverage / 2).toFixed(1)}
+                  </Typography>
+                </Box>
+                <Typography variant="body2" color="#fff" sx={{ fontSize: '0.98rem', fontWeight: 500 }}>
+                  {movie.releaseDate && new Date(movie.releaseDate).getFullYear()}
+                </Typography>
+              </Box>
+            </CardContent>
+          </Card>
+        ))}
+      </Box>
+    </Box>
+  );
+};
 
 const Home = () => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));  
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [movies, setMovies] = useState([]);
+  const [trending, setTrending] = useState([]);
+  const [topRated, setTopRated] = useState([]);
+  const [popular, setPopular] = useState([]);
+  const [animated, setAnimated] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(0);
-  const [featuredMovie, setFeaturedMovie] = useState(null);
-  const [featuredLoading, setFeaturedLoading] = useState(true);
-  
-  // New state for different categories
-  const [trendingMovies, setTrendingMovies] = useState([]);
-  const [popularMovies, setPopularMovies] = useState([]);
-  const [topRatedMovies, setTopRatedMovies] = useState([]);
-  const [upcomingMovies, setUpcomingMovies] = useState([]);
-  const [nowPlayingMovies, setNowPlayingMovies] = useState([]);
-  const [categoryLoading, setCategoryLoading] = useState({
-    trending: true,
-    popular: true,
-    topRated: true,
-    upcoming: true,
-    nowPlaying: true
-  });
-  
-  const searchQuery = searchParams.get('search') || '';
-  const filterParam = searchParams.get('filter') || '';
 
-  // Fetch a featured movie for the hero section
-  useEffect(() => {
-    const fetchFeaturedMovie = async () => {
-      setFeaturedLoading(true);
-      try {
-        // Get trending movies to pick a featured one
-        const trendingData = await getTrendingMovies('day', 1);
-        const featured = trendingData.results[Math.floor(Math.random() * 5)]; // Pick one of the top 5
-        setFeaturedMovie(featured);
-      } catch (err) {
-        console.error('Error fetching featured movie:', err);
-      } finally {
-        setFeaturedLoading(false);
-      }
-    };
+  // Refs for horizontal scroll
+  const trendingRef = useRef();
+  const topRatedRef = useRef();
+  const popularRef = useRef();
+  const animatedRef = useRef();
 
-    // Only fetch featured movie for homepage (not search pages)
-    if (!searchQuery && !filterParam) {
-      fetchFeaturedMovie();
-    } else {
-      setFeaturedMovie(null);
-      setFeaturedLoading(false);
-    }
-  }, [searchQuery, filterParam]);
-  
-  // New useEffect to fetch movie categories for the homepage
   useEffect(() => {
-    // Only fetch categories for homepage (not search or filter pages)
-    if (searchQuery || filterParam) return;
-    
-    const fetchMovieCategories = async () => {
-      try {
-        // Fetch trending movies
-        setCategoryLoading(prev => ({ ...prev, trending: true }));
-        const trendingData = await getTrendingMovies('week', 1);
-        setTrendingMovies(trendingData.results);
-        setCategoryLoading(prev => ({ ...prev, trending: false }));
-        
-        // Fetch popular movies
-        setCategoryLoading(prev => ({ ...prev, popular: true }));
-        const popularData = await getPopularMovies(1);
-        setPopularMovies(popularData.results);
-        setCategoryLoading(prev => ({ ...prev, popular: false }));
-        
-        // Fetch top rated movies
-        setCategoryLoading(prev => ({ ...prev, topRated: true }));
-        const topRatedData = await getTopRatedMovies(1);
-        setTopRatedMovies(topRatedData.results);
-        setCategoryLoading(prev => ({ ...prev, topRated: false }));
-        
-        // Fetch upcoming movies
-        setCategoryLoading(prev => ({ ...prev, upcoming: true }));
-        const upcomingData = await getUpcomingMovies(1);
-        setUpcomingMovies(upcomingData.results);
-        setCategoryLoading(prev => ({ ...prev, upcoming: false }));
-        
-        // Fetch now playing movies
-        setCategoryLoading(prev => ({ ...prev, nowPlaying: true }));
-        const nowPlayingData = await getNowPlayingMovies(1);
-        setNowPlayingMovies(nowPlayingData.results);
-        setCategoryLoading(prev => ({ ...prev, nowPlaying: false }));
-        
-      } catch (error) {
-        console.error('Error fetching movie categories:', error);
-      }
-    };
-    
-    fetchMovieCategories();
-  }, [searchQuery, filterParam]);
-
-  // Fetch movies based on parameters
-  useEffect(() => {
-    const fetchMovies = async () => {
+    const fetchAll = async () => {
       setLoading(true);
-      setError(null);
-      
       try {
-        let response;
-
-        // If search is active, it takes priority
-        if (searchQuery) {
-          response = await searchMovies(searchQuery, page);
-        } 
-        else {
-          // Pre-defined filter options
-          switch(filterParam) {
-            case 'popular':
-              response = await getPopularMovies(page);
-              break;
-            case 'top_rated':
-              response = await getTopRatedMovies(page);
-              break;
-            case 'upcoming':
-              response = await getUpcomingMovies(page);
-              break;
-            case 'now_playing':
-              response = await getNowPlayingMovies(page);
-              break;
-            default:
-              // Default to trending
-              response = await getTrendingMovies('week', page);
-              break;
-          }
+        const [trendingRes, topRatedRes, popularRes, genres] = await Promise.all([
+          getTrendingMovies('week', 1),
+          getTopRatedMovies(1),
+          getPopularMovies(1),
+          getGenres(),
+        ]);
+        setTrending(trendingRes.results.slice(0, 16));
+        setTopRated(topRatedRes.results.slice(0, 16));
+        setPopular(popularRes.results.slice(0, 16));
+        // Find Animation genre id
+        const animationGenre = genres.find(g => g.name.toLowerCase() === 'animation');
+        if (animationGenre) {
+          const animatedRes = await searchMovies('', 1);
+          setAnimated(animatedRes.results.filter(m => m.genres && m.genres.some(g => g.id === animationGenre.id)).slice(0, 16));
+        } else {
+          setAnimated([]);
         }
-
-        setMovies(response.results);
-        setTotalPages(Math.min(response.total_pages || response.totalPages, 500)); // TMDB API limits to 500 pages
       } catch (err) {
-        console.error('Error fetching movies:', err);
-        setError('Failed to load movies. Please try again later.');
-        setMovies([]);
+        setTrending([]);
+        setTopRated([]);
+        setPopular([]);
+        setAnimated([]);
       } finally {
         setLoading(false);
       }
     };
+    fetchAll();
+  }, []);
 
-    fetchMovies();
-  }, [searchQuery, filterParam, page]);
-
-  // Handle page change
-  const handlePageChange = (event, value) => {
-    setPage(value);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const getPageTitle = () => {
-    if (searchQuery) {
-      return `Search Results: "${searchQuery}"`;
-    } else if (filterParam === 'popular') {
-      return 'Popular Movies';
-    } else if (filterParam === 'top_rated') {
-      return 'Top Rated Movies';
-    } else if (filterParam === 'upcoming') {
-      return 'Upcoming Movies';
-    } else if (filterParam === 'now_playing') {
-      return 'Now Playing Movies';
-    } else {
-      return 'Trending Movies';
+  const scrollByCards = (ref, dir = 1) => {
+    if (ref.current) {
+      ref.current.scrollBy({ left: dir * (CARD_WIDTH + 24) * VISIBLE_CARDS, behavior: 'smooth' });
     }
-  };
-
-  const renderFeaturedMovie = () => {
-    if (featuredLoading) {
-      return (
-        <Box 
-          sx={{ 
-            width: '100%', 
-            height: { xs: 400, md: 500 }, 
-            position: 'relative',
-            mb: 6, 
-            borderRadius: 3,
-            overflow: 'hidden'
-          }}
-        >
-          <Skeleton variant="rectangular" width="100%" height="100%" animation="wave" />
-        </Box>
-      );
-    }
-
-    if (!featuredMovie) return null;
-
-    return (
-      <Paper
-        className="fade-in" 
-        elevation={4}
-        sx={{
-          position: 'relative',
-          width: '100%',
-          height: { xs: 400, md: 500 },
-          mb: 6,
-          borderRadius: 3,
-          overflow: 'hidden',
-          backgroundImage: `linear-gradient(to top, ${alpha(theme.palette.background.paper, 1)}, 
-                            ${alpha(theme.palette.background.paper, 0.4)}), 
-                            url(${featuredMovie.backdrop || ''})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          display: 'flex',
-          alignItems: 'flex-end',
-        }}
-      >
-        <Container maxWidth="lg" sx={{ py: 4 }}>
-          <Grid container spacing={4} alignItems="flex-end">
-            <Grid item xs={12} sm={4} md={3}>
-              <Box
-                sx={{
-                  borderRadius: 2,
-                  overflow: 'hidden',
-                  boxShadow: '0 8px 40px rgba(0, 0, 0, 0.2)',
-                  transform: 'translateY(-20px)',
-                  display: { xs: 'none', sm: 'block' }
-                }}
-              >
-                <img 
-                  src={featuredMovie.poster} 
-                  alt={featuredMovie.title} 
-                  style={{ width: '100%', display: 'block' }}
-                />
-              </Box>
-            </Grid>
-            <Grid item xs={12} sm={8} md={9}>
-              <Box className="slide-up">
-                <Typography 
-                  variant="overline" 
-                  sx={{ 
-                    color: theme.palette.primary.main, 
-                    fontWeight: 'bold',
-                    letterSpacing: 2,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1
-                  }}
-                >
-                  <HotIcon fontSize="small" />
-                  Featured Today
-                </Typography>
-                
-                <Typography 
-                  variant="h3" 
-                  component="h1" 
-                  gutterBottom
-                  sx={{ 
-                    fontWeight: 700,
-                    textShadow: '0 2px 10px rgba(0,0,0,0.1)',
-                    fontSize: { xs: '2rem', md: '3rem' }
-                  }}
-                >
-                  {featuredMovie.title}
-                </Typography>
-                
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <Rating
-                    value={featuredMovie.voteAverage / 2}
-                    precision={0.5}
-                    readOnly
-                  />
-                  <Typography variant="body2" sx={{ ml: 1 }}>
-                    {(featuredMovie.voteAverage / 2).toFixed(1)} ({featuredMovie.voteCount} votes)
-                  </Typography>
-                </Box>
-                
-                <Typography 
-                  variant="body1"
-                  sx={{ 
-                    mb: 3,
-                    display: '-webkit-box',
-                    overflow: 'hidden',
-                    WebkitBoxOrient: 'vertical',
-                    WebkitLineClamp: 3
-                  }}
-                >
-                  {featuredMovie.overview}
-                </Typography>
-                
-                <Button 
-                  variant="contained" 
-                  color="primary"
-                  onClick={() => window.location.href = `/movie/${featuredMovie.id}`}
-                  sx={{ 
-                    px: 4,
-                    py: 1
-                  }}
-                >
-                  View Details
-                </Button>
-              </Box>
-            </Grid>
-          </Grid>
-        </Container>
-      </Paper>
-    );
   };
 
   return (
-    <Box sx={{ minHeight: 'calc(100vh - 130px)' }}>
-      {/* Featured Movie Hero Section */}
-      {!searchQuery && !filterParam && renderFeaturedMovie()}
-
-      {/* Main Content */}
-      <Container maxWidth="xl" sx={{ py: 4 }}>
-        {/* For Search or Filter Results */}
-        {(searchQuery || filterParam) && (
+    <Box sx={{ minHeight: '100vh', width: '100vw', bgcolor: 'linear-gradient(135deg, #181c2b 0%, #232946 100%)', p: 0, m: 0, overflowX: 'hidden' }}>
+      <Box sx={{ width: '100%', maxWidth: 1600, mx: 'auto', pt: 6, pb: 8 }}>
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
+            <CircularProgress color="primary" size={60} />
+          </Box>
+        ) : (
           <>
-            {/* Title Section */}
-            <Box mb={4}>
-              <Typography 
-                variant="h4" 
-                component="h2" 
-                gutterBottom 
-                sx={{ 
-                  fontWeight: 700,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1
-                }}
-              >
-                {filterParam === 'popular' ? (
-                  <TheatersIcon fontSize="large" color="primary" />
-                ) : !filterParam ? (
-                  <TrendingUpIcon fontSize="large" color="primary" />
-                ) : (
-                  null
-                )}
-                {getPageTitle()}
-              </Typography>
-            </Box>
-
-            {/* Loading State */}
-            {loading && (
-              <Box sx={{ py: 8 }}>
-                <Grid container spacing={3}>
-                  {Array.from(new Array(8)).map((_, index) => (
-                    <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
-                      <Card sx={{ height: 500, width: '100%', borderRadius: 2 }}>
-                        <Skeleton variant="rectangular" height={350} animation="wave" />
-                        <CardContent>
-                          <Skeleton variant="text" height={30} width="80%" animation="wave" />
-                          <Skeleton variant="text" height={20} width="60%" animation="wave" />
-                          <Skeleton variant="text" height={20} width="40%" animation="wave" sx={{ mt: 2 }} />
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                  ))}
-                </Grid>
-              </Box>
-            )}
-
-            {/* Error State */}
-            {error && !loading && (
-              <Box textAlign="center" my={8}>
-                <Typography color="error">{error}</Typography>
-              </Box>
-            )}
-
-            {/* Empty Results */}
-            {!loading && !error && movies.length === 0 && (
-              <Box textAlign="center" my={8}>
-                <Typography variant="h6">
-                  No movies found. Try a different search.
-                </Typography>
-              </Box>
-            )}
-
-            {/* Movie Grid */}
-            {!loading && !error && movies.length > 0 && (
-              <Grid container spacing={2}>
-                {movies.map((movie) => (
-                  <Grid item xs={6} sm={4} md={3} lg={2} key={movie.id} className="fade-in">
-                    <MovieCard 
-                      movie={movie}
-                      width="100%"
-                      height={340}
-                    />
-                  </Grid>
-                ))}
-              </Grid>
-            )}
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <Box 
-                display="flex" 
-                justifyContent="center" 
-                mt={6}
-                sx={{ '& .MuiPagination-ul': { flexWrap: 'nowrap' } }}
-              >
-                <Pagination 
-                  count={totalPages} 
-                  page={page}
-                  onChange={handlePageChange}
-                  color="primary"
-                  siblingCount={isMobile ? 0 : 1}
-                  size={isMobile ? 'small' : 'medium'}
-                  showFirstButton
-                  showLastButton
-                  sx={{
-                    '& .MuiPaginationItem-root': {
-                      borderRadius: 2
-                    }
-                  }}
-                />
-              </Box>
-            )}
+            <Section
+              title="Trending Movies"
+              movies={trending}
+              scrollRef={trendingRef}
+              onScrollLeft={() => scrollByCards(trendingRef, -1)}
+              onScrollRight={() => scrollByCards(trendingRef, 1)}
+            />
+            <Section
+              title="Top Rated Movies"
+              movies={topRated}
+              scrollRef={topRatedRef}
+              onScrollLeft={() => scrollByCards(topRatedRef, -1)}
+              onScrollRight={() => scrollByCards(topRatedRef, 1)}
+            />
+            <Section
+              title="Popular Movies"
+              movies={popular}
+              scrollRef={popularRef}
+              onScrollLeft={() => scrollByCards(popularRef, -1)}
+              onScrollRight={() => scrollByCards(popularRef, 1)}
+            />
+            <Section
+              title="Animated Movies"
+              movies={animated}
+              scrollRef={animatedRef}
+              onScrollLeft={() => scrollByCards(animatedRef, -1)}
+              onScrollRight={() => scrollByCards(animatedRef, 1)}
+            />
           </>
         )}
-
-        {/* For Homepage with Category Rows */}
-        {!searchQuery && !filterParam && (
-          <Box>
-            {/* Trending Movies Row */}
-            <MovieRow 
-              title="Trending Now"
-              movies={trendingMovies}
-              loading={categoryLoading.trending}
-              icon={<TrendingUpIcon color="primary" />}
-            />
-            
-            {/* Popular Movies Row */}
-            <MovieRow 
-              title="Popular Movies"
-              movies={popularMovies}
-              loading={categoryLoading.popular}
-              icon={<TheatersIcon color="primary" />}
-            />
-            
-            {/* Top Rated Movies Row */}
-            <MovieRow 
-              title="Top Rated"
-              movies={topRatedMovies}
-              loading={categoryLoading.topRated}
-              icon={<StarIcon color="primary" />}
-            />
-            
-            {/* Now Playing Movies Row */}
-            <MovieRow 
-              title="Now Playing"
-              movies={nowPlayingMovies}
-              loading={categoryLoading.nowPlaying}
-              icon={<NowPlayingIcon color="primary" />}
-            />
-            
-            {/* Upcoming Movies Row */}
-            <MovieRow 
-              title="Coming Soon"
-              movies={upcomingMovies}
-              loading={categoryLoading.upcoming}
-              icon={<UpcomingIcon color="primary" />}
-            />
-          </Box>
-        )}
-      </Container>
+      </Box>
     </Box>
   );
 };
