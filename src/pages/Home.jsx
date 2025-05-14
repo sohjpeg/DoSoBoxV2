@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTheme, alpha } from '@mui/material/styles';
+import { useLocation } from 'react-router-dom';
 import {
   Typography,
   Box,
@@ -9,19 +10,99 @@ import {
   Rating,
   CircularProgress,
   IconButton,
+  Grid,
+  Container,
 } from '@mui/material';
 import { ArrowBackIos, ArrowForwardIos } from '@mui/icons-material';
 import {
   getTrendingMovies,
   getTopRatedMovies,
   getPopularMovies,
-  getGenres,
   getMoviesByGenre,
+  searchMovies,
 } from '../utils/tmdbApi';
 
 const CARD_WIDTH = 260;
 const CARD_HEIGHT = 400;
 const VISIBLE_CARDS = 4;
+
+// Grid component for search results
+const SearchGrid = ({ title, movies }) => {
+  const theme = useTheme();
+  
+  return (
+    <Box sx={{ mb: 7 }}>
+      <Box sx={{ mb: 3, pl: 2 }}>
+        <Typography variant="h5" sx={{ fontWeight: 800, color: '#fff', letterSpacing: 1.2 }}>{title}</Typography>
+      </Box>
+      <Container maxWidth="xl">
+        <Grid container spacing={3}>
+          {movies.map((movie) => (
+            <Grid item xs={12} sm={6} md={4} lg={3} key={movie.id}>
+              <Card
+                onClick={() => window.location.href = `/movie/${movie.id}`}
+                sx={{
+                  height: CARD_HEIGHT,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  borderRadius: 4,
+                  overflow: 'hidden',
+                  bgcolor: 'rgba(255,255,255,0.08)',
+                  boxShadow: '0 4px 32px rgba(0,0,0,0.18)',
+                  cursor: 'pointer',
+                  transition: 'transform 0.2s',
+                  '&:hover': {
+                    transform: 'translateY(-8px) scale(1.04)',
+                    boxShadow: '0 12px 32px 0 rgba(0,0,0,0.22)',
+                  },
+                }}
+              >
+                <CardMedia
+                  component="img"
+                  image={movie.poster || 'https://via.placeholder.com/300x450?text=No+Image'}
+                  alt={movie.title}
+                  sx={{
+                    width: '100%',
+                    height: 320,
+                    objectFit: 'cover',
+                    background: '#222',
+                    display: 'block',
+                  }}
+                />
+                <CardContent sx={{ 
+                  flexGrow: 1, 
+                  p: 2, 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  justifyContent: 'flex-end', 
+                  minHeight: 0 
+                }}>
+                  <Box display="flex" alignItems="center" justifyContent="space-between">
+                    <Box display="flex" alignItems="center">
+                      <Rating
+                        value={movie.voteAverage / 2}
+                        precision={0.5}
+                        size="small"
+                        readOnly
+                        sx={{ color: theme.palette.primary.main }}
+                      />
+                      <Typography variant="body2" color="#fff" ml={0.5} sx={{ fontSize: '0.98rem', fontWeight: 500 }}>
+                        {(movie.voteAverage / 2).toFixed(1)}
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" color="#fff" sx={{ fontSize: '0.98rem', fontWeight: 500 }}>
+                      {movie.releaseDate && new Date(movie.releaseDate).getFullYear()}
+                    </Typography>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      </Container>
+    </Box>
+  );
+};
 
 const Section = ({ title, movies, scrollRef, onScrollLeft, onScrollRight }) => {
   const theme = useTheme();
@@ -80,26 +161,7 @@ const Section = ({ title, movies, scrollRef, onScrollLeft, onScrollRight }) => {
                 display: 'block',
               }}
             />
-            <CardContent sx={{ flexGrow: 1, p: 2, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: 0 }}>
-              <Typography
-                variant="subtitle1"
-                sx={{
-                  fontWeight: 700,
-                  color: '#fff',
-                  fontSize: '1.08rem',
-                  mb: 0.5,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  display: '-webkit-box',
-                  WebkitBoxOrient: 'vertical',
-                  WebkitLineClamp: 2,
-                  height: '2.6em', // allow up to 2 lines, always visible
-                  whiteSpace: 'normal',
-                  lineHeight: 1.3,
-                }}
-              >
-                {movie.title}
-              </Typography>
+            <CardContent sx={{ flexGrow: 1, p: 2, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', minHeight: 0 }}>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box display="flex" alignItems="center">
                   <Rating
@@ -127,59 +189,78 @@ const Section = ({ title, movies, scrollRef, onScrollLeft, onScrollRight }) => {
 
 const Home = () => {
   const theme = useTheme();
+  const location = useLocation();
   const [trending, setTrending] = useState([]);
   const [topRated, setTopRated] = useState([]);
   const [popular, setPopular] = useState([]);
   const [animated, setAnimated] = useState([]);
+  const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
 
   // Refs for horizontal scroll
   const trendingRef = useRef();
   const topRatedRef = useRef();
   const popularRef = useRef();
   const animatedRef = useRef();
+  const searchRef = useRef();
 
   useEffect(() => {
-    const fetchAll = async () => {
+    // Parse URL query parameters
+    const params = new URLSearchParams(location.search);
+    const search = params.get('search');
+    const filter = params.get('filter');
+    
+    setSearchQuery(search || '');
+    setIsSearching(Boolean(search));
+
+    const fetchData = async () => {
       setLoading(true);
       try {
-        // Fetch genres first to get animation genre ID
-        const genres = await getGenres();
-        const animationGenre = genres.find(g => g.name.toLowerCase() === 'animation');
-        const animationGenreId = animationGenre ? animationGenre.id : null;
-        
-        // Fetch all movie data in parallel
-        const [trendingRes, topRatedRes, popularRes, animatedRes] = await Promise.all([
-          getTrendingMovies('week', 1),
-          getTopRatedMovies(1),
-          getPopularMovies(1),
-          // If animation genre found, fetch animated movies using the genre ID
-          animationGenreId ? getMoviesByGenre(animationGenreId, 1) : { results: [] }
-        ]);
-
-        setTrending(trendingRes.results.slice(0, 16));
-        setTopRated(topRatedRes.results.slice(0, 16));
-        setPopular(popularRes.results.slice(0, 16));
-        setAnimated(animatedRes.results.slice(0, 16));
+        // If there's a search query, perform search
+        if (search) {
+          const searchResponse = await searchMovies(search, 1);
+          setSearchResults(searchResponse.results);
+          // Don't fetch other categories when searching
+          setTrending([]);
+          setTopRated([]);
+          setPopular([]);
+          setAnimated([]);
+        } else {
+          // Otherwise load normal content
+          const [trendingRes, topRatedRes, popularRes, animatedRes] = await Promise.all([
+            getTrendingMovies('week', 1),
+            getTopRatedMovies(1),
+            getPopularMovies(1),
+            getMoviesByGenre(16, 1), // 16 is the TMDB ID for Animation genre
+          ]);
+          setTrending(trendingRes.results.slice(0, 16));
+          setTopRated(topRatedRes.results.slice(0, 16));
+          setPopular(popularRes.results.slice(0, 16));
+          setAnimated(animatedRes.results.slice(0, 16));
+          setSearchResults([]);
+        }
       } catch (err) {
-        console.error('Error fetching movies:', err);
+        console.error("Error fetching movies:", err);
         setTrending([]);
         setTopRated([]);
         setPopular([]);
         setAnimated([]);
+        setSearchResults([]);
       } finally {
         setLoading(false);
       }
     };
-    fetchAll();
-  }, []);
+    
+    fetchData();
+  }, [location.search]);
 
   const scrollByCards = (ref, dir = 1) => {
     if (ref.current) {
       ref.current.scrollBy({ left: dir * (CARD_WIDTH + 24) * VISIBLE_CARDS, behavior: 'smooth' });
     }
   };
-
   return (
     <Box sx={{ minHeight: '100vh', width: '100vw', bgcolor: 'linear-gradient(135deg, #181c2b 0%, #232946 100%)', p: 0, m: 0, overflowX: 'hidden' }}>
       <Box sx={{ width: '100%', maxWidth: 1600, mx: 'auto', pt: 6, pb: 8 }}>
@@ -187,7 +268,27 @@ const Home = () => {
           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
             <CircularProgress color="primary" size={60} />
           </Box>
+        ) : isSearching ? (
+          // Show search results
+          <>
+            {searchResults.length > 0 ? (
+              <SearchGrid
+                title={`Search Results for "${searchQuery}"`}
+                movies={searchResults}
+              />
+            ) : (
+              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 300, flexDirection: 'column' }}>
+                <Typography variant="h5" color="text.primary" sx={{ mb: 2, fontWeight: 700 }}>
+                  No results found for "{searchQuery}"
+                </Typography>
+                <Typography variant="body1" color="text.secondary">
+                  Try different keywords or check for spelling mistakes
+                </Typography>
+              </Box>
+            )}
+          </>
         ) : (
+          // Show regular content
           <>
             <Section
               title="Trending Movies"

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
   AppBar, 
   Toolbar, 
@@ -99,12 +99,23 @@ const Navbar = ({ toggleThemeMode, mode }) => {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const theme = useTheme();
+  const location = useLocation();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  
-  const [searchQuery, setSearchQuery] = useState('');
+    const [searchQuery, setSearchQuery] = useState('');
   const [anchorEl, setAnchorEl] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [notificationAnchorEl, setNotificationAnchorEl] = useState(null);
+  
+  // Extract search query from URL when component mounts or URL changes
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const searchParam = params.get('search');
+    if (searchParam) {
+      setSearchQuery(searchParam);
+    } else {
+      setSearchQuery('');
+    }
+  }, [location.search]);
 
   // Handle menu opening
   const handleMenuOpen = (event) => {
@@ -136,7 +147,6 @@ const Navbar = ({ toggleThemeMode, mode }) => {
     logout();
     navigate('/');
   };
-  
   // Handle search submission
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -147,12 +157,13 @@ const Navbar = ({ toggleThemeMode, mode }) => {
     // Add search query if provided
     if (searchQuery.trim()) {
       params.append('search', searchQuery.trim());
+      
+      // Navigate with search query
+      navigate(`/?${params.toString()}`);
     } else {
-      params.append('filter', 'trending');
+      // If search is empty, just go to home without parameters
+      navigate('/');
     }
-    
-    // Navigate with search query
-    navigate(`/?${params.toString()}`);
     
     // Close mobile drawer if open
     if (isMobile) {
@@ -172,8 +183,7 @@ const Navbar = ({ toggleThemeMode, mode }) => {
             <CloseIcon />
           </IconButton>
         </Box>
-        <Divider />      
-        <Box 
+        <Divider />        <Box 
           component="form" 
           onSubmit={handleSearchSubmit}
           sx={{ p: 2 }}
@@ -181,12 +191,17 @@ const Navbar = ({ toggleThemeMode, mode }) => {
           <Search>
             <SearchIconWrapper>
               <SearchIcon />
-            </SearchIconWrapper>
-            <StyledInputBase
+            </SearchIconWrapper>            <StyledInputBase
               placeholder="Search movies…"
               inputProps={{ 'aria-label': 'search' }}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              autoComplete="off"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && searchQuery.trim()) {
+                  handleSearchSubmit(e);
+                }
+              }}
             />
           </Search>
           <Button 
@@ -195,6 +210,7 @@ const Navbar = ({ toggleThemeMode, mode }) => {
             color="primary"
             fullWidth
             sx={{ mt: 1, borderRadius: 2 }}
+            disabled={!searchQuery.trim()}
           >
             Search
           </Button>
@@ -320,8 +336,7 @@ const Navbar = ({ toggleThemeMode, mode }) => {
               Collections
             </Button>
           </Box>
-          {/* Centered search bar - desktop */}
-          <Box 
+          {/* Centered search bar - desktop */}          <Box 
             component="form" 
             onSubmit={handleSearchSubmit}
             sx={{ 
@@ -336,12 +351,17 @@ const Navbar = ({ toggleThemeMode, mode }) => {
             <Search sx={{ width: '100%', maxWidth: 400 }}>
               <SearchIconWrapper>
                 <SearchIcon />
-              </SearchIconWrapper>
-              <StyledInputBase
+              </SearchIconWrapper>              <StyledInputBase
                 placeholder="Search movies…"
                 inputProps={{ 'aria-label': 'search' }}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                autoComplete="off"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && searchQuery.trim()) {
+                    handleSearchSubmit(e);
+                  }
+                }}
               />
             </Search>
             <Button 
@@ -350,6 +370,7 @@ const Navbar = ({ toggleThemeMode, mode }) => {
               color="primary"
               size="small"
               sx={{ ml: 1, borderRadius: 2 }}
+              disabled={!searchQuery.trim()}
             >
               Search
             </Button>

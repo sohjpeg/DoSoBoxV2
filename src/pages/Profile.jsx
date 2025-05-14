@@ -449,49 +449,64 @@ const Profile = () => {
             ) : favorites.length > 0 ? (
               <Grid container spacing={2}>
                 {favorites.map((movie) => (
-                  <Grid item xs={6} sm={4} md={4} key={movie._id}>
-                    <Card
+                  <Grid item xs={6} sm={4} md={4} key={movie._id}>                    <Card
                       sx={{
                         height: '100%',
                         position: 'relative',
                         transition: 'all 0.3s ease',
                         borderRadius: 3,
                         overflow: 'hidden',
-                        boxShadow: 2,
+                        boxShadow: '0 6px 16px rgba(0,0,0,0.15)',
                         '&:hover': { 
-                          transform: 'translateY(-8px)',
-                          boxShadow: 8 
+                          transform: 'translateY(-10px) scale(1.02)',
+                          boxShadow: '0 12px 28px rgba(0,0,0,0.25)'
                         },
                       }}
-                    >
-                      <CardActionArea component={Link} to={`/movie/${movie.tmdbId}`}>
-                        <CardMedia
-                          component="img"
-                          height={220}
-                          image={movie.poster || 'https://via.placeholder.com/500x750?text=No+Poster'}
-                          alt={movie.title}
-                          sx={{
-                            objectFit: 'cover',
-                          }}
-                        />
-                        <CardContent sx={{ pb: 0 }}>
-                          <Typography variant="subtitle1" fontWeight={600} noWrap>
-                            {movie.title}
-                          </Typography>
-                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                            <Rating
-                              value={movie.voteAverage / 2}
-                              precision={0.5}
-                              size="small"
-                              readOnly
-                            />
-                            <Typography variant="caption" color="text.secondary" ml={1}>
-                              ({movie.voteAverage?.toFixed(1)})
+                    >                      <CardActionArea component={Link} to={`/movie/${movie.tmdbId}`}>
+                        <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
+                          <CardMedia
+                            component="img"
+                            height={250}
+                            image={movie.poster || 'https://via.placeholder.com/500x750?text=No+Poster'}
+                            alt={movie.title}
+                            sx={{
+                              objectFit: 'cover',
+                            }}
+                          />
+                          {/* Gradient overlay to make text readable */}
+                          <Box
+                            sx={{
+                              position: 'absolute',
+                              bottom: 0,
+                              left: 0,
+                              right: 0,
+                              background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0) 100%)',
+                              p: 2,
+                              pt: 3,
+                            }}
+                          >
+                            <Typography variant="subtitle1" fontWeight={700} noWrap sx={{ color: 'white' }}>
+                              {movie.title}
                             </Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
+                              <Rating
+                                value={movie.voteAverage / 2}
+                                precision={0.5}
+                                size="small"
+                                readOnly
+                                sx={{
+                                  '& .MuiRating-iconFilled': {
+                                    color: '#FFD700'
+                                  }
+                                }}
+                              />
+                              <Typography variant="caption" sx={{ color: 'white', ml: 1 }}>
+                                ({movie.voteAverage?.toFixed(1)})
+                              </Typography>
+                            </Box>
                           </Box>
-                        </CardContent>
-                      </CardActionArea>
-                      <Box
+                        </Box>
+                      </CardActionArea>                      <Box
                         sx={{
                           position: 'absolute',
                           top: 8,
@@ -502,12 +517,22 @@ const Profile = () => {
                         <IconButton
                           size="small"
                           sx={{
-                            bgcolor: alpha(theme.palette.background.paper, 0.8),
+                            bgcolor: alpha(theme.palette.background.paper, 0.6),
                             backdropFilter: 'blur(4px)',
-                            '&:hover': { bgcolor: theme.palette.error.main, color: 'white' },
-                            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                            transition: 'all 0.2s ease',
+                            opacity: 0.8,
+                            '&:hover': { 
+                              bgcolor: theme.palette.error.main, 
+                              color: 'white',
+                              opacity: 1 
+                            },
                           }}
-                          onClick={() => handleRemoveFavorite(movie.tmdbId)}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleRemoveFavorite(movie.tmdbId);
+                          }}
                         >
                           <Delete fontSize="small" />
                         </IconButton>
