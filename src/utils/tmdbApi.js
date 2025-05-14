@@ -89,28 +89,6 @@ export const getMovieDetails = async (movieId) => {
   }
 };
 
-// Get movies by genre
-export const getMoviesByGenre = async (genreId, page = 1) => {
-  try {
-    const response = await axios.get(`${BASE_URL}/discover/movie`, {
-      params: {
-        api_key: TMDB_API_KEY,
-        with_genres: genreId,
-        page
-      }
-    });
-
-    return {
-      results: response.data.results.map(formatMovie),
-      totalPages: response.data.total_pages,
-      currentPage: response.data.page
-    };
-  } catch (error) {
-    console.error('Error fetching movies by genre:', error);
-    throw error;
-  }
-};
-
 // Get movie genres list
 export const getGenres = async () => {
   try {
@@ -144,6 +122,92 @@ export const getPopularMovies = async (page = 1) => {
     };
   } catch (error) {
     console.error('Error fetching popular movies:', error);
+    throw error;
+  }
+};
+
+// Get top rated movies
+export const getTopRatedMovies = async (page = 1) => {
+  try {
+    const response = await axios.get(`${BASE_URL}/movie/top_rated`, {
+      params: {
+        api_key: TMDB_API_KEY,
+        page
+      }
+    });
+
+    return {
+      results: response.data.results.map(formatMovie),
+      totalPages: response.data.total_pages,
+      currentPage: response.data.page
+    };
+  } catch (error) {
+    console.error('Error fetching top rated movies:', error);
+    throw error;
+  }
+};
+
+// Get upcoming movies
+export const getUpcomingMovies = async (page = 1) => {
+  try {
+    const response = await axios.get(`${BASE_URL}/movie/upcoming`, {
+      params: {
+        api_key: TMDB_API_KEY,
+        page
+      }
+    });
+
+    return {
+      results: response.data.results.map(formatMovie),
+      totalPages: response.data.total_pages,
+      currentPage: response.data.page
+    };
+  } catch (error) {
+    console.error('Error fetching upcoming movies:', error);
+    throw error;
+  }
+};
+
+// Get now playing movies
+export const getNowPlayingMovies = async (page = 1) => {
+  try {
+    const response = await axios.get(`${BASE_URL}/movie/now_playing`, {
+      params: {
+        api_key: TMDB_API_KEY,
+        page
+      }
+    });
+
+    return {
+      results: response.data.results.map(formatMovie),
+      totalPages: response.data.total_pages,
+      currentPage: response.data.page
+    };
+  } catch (error) {
+    console.error('Error fetching now playing movies:', error);
+    throw error;
+  }
+};
+
+// Get movies by genre (for animated movies)
+export const getMoviesByGenre = async (genreId, page = 1) => {
+  try {
+    const response = await axios.get(`${BASE_URL}/discover/movie`, {
+      params: {
+        api_key: TMDB_API_KEY,
+        with_genres: genreId,
+        page,
+        sort_by: 'popularity.desc'
+      }
+    });
+
+    return {
+      results: response.data.results.map(formatMovie),
+      totalPages: response.data.total_pages,
+      currentPage: response.data.page
+    };
+  } catch (error) {
+    console.error('Error fetching movies by genre:', error);
     throw error;
   }
 };

@@ -1,0 +1,294 @@
+/* Modern UI enhancements */
+
+/* Glassmorphism effect */
+.glass-effect {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 10px; /* More subtle corners */
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08); /* Lighter shadow */
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(90deg, #ff5f6d, #ffc371);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+}
+
+/* Gradient borders */
+.gradient-border {
+  position: relative;
+  border-radius: 10px; /* More subtle corners */
+  overflow: hidden;
+}
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, #ff5f6d, #ffc371, #ff5f6d);
+  z-index: -1;
+  animation: animatedGradient 3s ease-in-out infinite;
+  border-radius: 12px;
+}
+
+@keyframes animatedGradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Neon glow effects */
+.neon-glow {
+  box-shadow: 0 0 5px #ff5f6d, 0 0 15px #ff5f6d, 0 0 30px #ff5f6d;
+  transition: all 0.3s ease;
+}
+
+.neon-glow:hover {
+  box-shadow: 0 0 10px #ff5f6d, 0 0 30px #ff5f6d, 0 0 60px #ff5f6d;
+}
+
+/* Better card transitions */
+.card-transition {
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.card-transition:hover {
+  transform: translateY(-8px) scale(1.01); /* More subtle movement */
+}
+
+/* Floating animation */
+@keyframes floating {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); } /* More subtle movement */
+  100% { transform: translateY(0px); }
+}
+
+.floating {
+  animation: floating 3s ease-in-out infinite;
+}
+
+/* Gradient background */
+.gradient-bg {
+  background: linear-gradient(135deg, #181c2b 0%, #232946 100%);
+  background-size: 400% 400%;
+  animation: gradientShift 15s ease infinite;
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Button pulse effect */
+.btn-pulse {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-pulse::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.3); /* Less intense effect */
+  border-radius: inherit;
+  transform: scale(0);
+  opacity: 0;
+  transition: transform 0.4s, opacity 0.4s;
+}
+
+.btn-pulse:hover::after {
+  transform: scale(2);
+  opacity: 0;
+}
+
+/* Minimalist loading animation */
+.minimalist-loading {
+  position: relative;
+  width: 40px;
+  height: 40px;
+}
+
+.minimalist-loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #ff5f6d;
+  border-radius: 50%;
+  animation: minimalistSpin 1s linear infinite;
+}
+
+@keyframes minimalistSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Minimalist card appearance */
+.minimalist-card {
+  background: rgba(30, 30, 40, 0.6);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.minimalist-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Clean section container */
+.section-container {
+  position: relative;
+  transition: opacity 0.3s ease;
+}
+
+/* Improved scrollbar for minimalism */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 95, 109, 0.3);
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 95, 109, 0.5);
+}
+
+/* Minimalist Card Hover */
+.minimalist-hover {
+  transition: all 0.3s ease;
+  border: 1px solid transparent;
+}
+
+.minimalist-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Subtle Text Fade */
+.text-fade {
+  position: relative;
+}
+
+.text-fade::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 30%;
+  height: 1.5em;
+  background: linear-gradient(to right, rgba(0,0,0,0), rgba(18, 22, 32, 1));
+}
+
+/* Sleek Button Style */
+.sleek-button {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: none;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.sleek-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* Minimal Section Divider */
+.section-divider {
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.1), transparent);
+  margin: 2rem 0;
+  border: none;
+}
+
+/* Subtle Background Texture */
+.subtle-texture {
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* Clean Border Line */
+.clean-border {
+  position: relative;
+}
+
+.clean-border::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.1), transparent);
+}
+
+/* Minimal Tag Style */
+.minimal-tag {
+  display: inline-block;
+  padding: 0.25em 0.5em;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: rgba(255, 95, 109, 0.1);
+  color: rgba(255, 95, 109, 0.8);
+  border-radius: 3px;
+  margin-right: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+/* Slim Card Design */
+.slim-card {
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 1rem;
+  transition: all 0.3s ease;
+}
+
+.slim-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-2px);
+}
+
+/* Elegant Shadow */
+.elegant-shadow {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transition: box-shadow 0.3s ease;
+}
+
+.elegant-shadow:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}

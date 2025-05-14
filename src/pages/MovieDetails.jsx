@@ -27,7 +27,12 @@ import {
   Skeleton,
   CardActionArea,
   Snackbar,
-  Alert
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField
 } from '@mui/material';
 import { 
   Favorite, 
@@ -39,12 +44,15 @@ import {
   Share,
   Star,
   ArrowBack,
-  ScreenShare
+  ScreenShare,
+  MovieFilter
 } from '@mui/icons-material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { getMovieDetails } from '../utils/tmdbApi';
 import { useAuth } from '../context/AuthContext';
 import { checkIsFavorite, addToFavorites, removeFromFavorites } from '../utils/favoritesService';
+import { getCollections, createCollection, addMovieToCollection } from '../utils/collectionsService';
+import { getMovieReviews, postReview, deleteReview } from '../utils/reviewsService';
 
 const MovieDetails = () => {
   const { id } = useParams();
@@ -61,6 +69,16 @@ const MovieDetails = () => {
     message: '',
     severity: 'success'
   });
+  const [collections, setCollections] = useState([]);
+  const [collectionsLoading, setCollectionsLoading] = useState(false);
+  const [collectionsDialogOpen, setCollectionsDialogOpen] = useState(false);
+  const [newCollectionName, setNewCollectionName] = useState('');
+  const [creatingCollection, setCreatingCollection] = useState(false);
+  const [reviews, setReviews] = useState([]);
+  const [reviewText, setReviewText] = useState('');
+  const [reviewRating, setReviewRating] = useState(0);
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [userReview, setUserReview] = useState(null);
 
   useEffect(() => {
     // Scroll to top when the component mounts
@@ -95,6 +113,29 @@ const MovieDetails = () => {
     return () => {
       document.title = 'DosoBox - Movie Database';
     };
+  }, [id, currentUser]);
+
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        const data = await getMovieReviews(id);
+        setReviews(data);
+        if (currentUser) {
+          const myReview = data.find(r => r.user._id === currentUser.id);
+          setUserReview(myReview || null);
+          if (myReview) {
+            setReviewText(myReview.text);
+            setReviewRating(myReview.rating);
+          } else {
+            setReviewText('');
+            setReviewRating(0);
+          }
+        }
+      } catch (err) {
+        setReviews([]);
+      }
+    };
+    fetchReviews();
   }, [id, currentUser]);
 
   const handleTabChange = (event, newValue) => {
@@ -167,6 +208,97 @@ const MovieDetails = () => {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return `${hours}h ${mins}m`;
+  };
+
+  const fetchCollections = async () => {
+    if (!currentUser) return;
+    setCollectionsLoading(true);
+    try {
+      const data = await getCollections();
+      setCollections(data);
+    } catch (err) {
+      setSnackbar({ open: true, message: 'Error loading collections', severity: 'error' });
+    } finally {
+      setCollectionsLoading(false);
+    }
+  };
+
+  const handleOpenCollectionsDialog = () => {
+    setCollectionsDialogOpen(true);
+    fetchCollections();
+  };
+
+  const handleCloseCollectionsDialog = () => {
+    setCollectionsDialogOpen(false);
+    setNewCollectionName('');
+  };
+
+  const handleCreateCollection = async () => {
+    if (!newCollectionName.trim()) return;
+    setCreatingCollection(true);
+    try {
+      await createCollection(newCollectionName.trim());
+      setNewCollectionName('');
+      fetchCollections();
+      setSnackbar({ open: true, message: 'Collection created!', severity: 'success' });
+    } catch (err) {
+      setSnackbar({ open: true, message: 'Error creating collection', severity: 'error' });
+    } finally {
+      setCreatingCollection(false);
+    }
+  };
+
+  const handleAddToCollection = async (collectionId) => {
+    try {
+      // Map movie.id to tmdbId for backend compatibility
+      const movieForCollection = {
+        tmdbId: movie.id,
+        title: movie.title,
+        poster: movie.poster,
+        voteAverage: movie.voteAverage,
+        releaseDate: movie.releaseDate
+      };
+      await addMovieToCollection(collectionId, movieForCollection);
+      setSnackbar({ open: true, message: `Added to collection!`, severity: 'success' });
+      fetchCollections();
+    } catch (err) {
+      setSnackbar({ open: true, message: 'Error adding to collection', severity: 'error' });
+    }
+  };
+
+  const handleReviewSubmit = async () => {
+    if (!reviewText.trim() || !reviewRating) return;
+    setSubmittingReview(true);
+    try {
+      await postReview(id, reviewRating, reviewText.trim());
+      setSnackbar({ open: true, message: 'Review submitted!', severity: 'success' });
+      setReviewText('');
+      setReviewRating(0);
+      setUserReview({ rating: reviewRating, text: reviewText, user: { _id: currentUser.id, username: currentUser.username, avatar: currentUser.avatar } });
+      // Refresh reviews
+      const data = await getMovieReviews(id);
+      setReviews(data);
+    } catch (err) {
+      setSnackbar({ open: true, message: 'Error submitting review', severity: 'error' });
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
+  const handleDeleteReview = async () => {
+    if (!userReview) return;
+    try {
+      await deleteReview(userReview._id);
+      setSnackbar({ open: true, message: 'Review deleted', severity: 'success' });
+      setUserReview(null);
+      setReviewText('');
+      setReviewRating(0);
+      // Refresh reviews
+      const data = await getMovieReviews(id);
+      setReviews(data);
+    } catch (err) {
+      setSnackbar({ open: true, message: 'Error deleting review', severity: 'error' });
+    }
   };
 
   if (loading) {
@@ -487,6 +619,20 @@ const MovieDetails = () => {
                   >
                     Watch Now
                   </Button>
+
+                  {/* Add to Collection button */}
+                  <Box sx={{ ml: 1 }}>
+                    <Tooltip title={currentUser ? 'Add to collection' : 'Login to use collections'}>
+                      <IconButton
+                        onClick={handleOpenCollectionsDialog}
+                        color="secondary"
+                        disabled={!currentUser}
+                        sx={{ bgcolor: alpha(theme.palette.background.paper, 0.3), '&:hover': { bgcolor: alpha(theme.palette.background.paper, 0.5) } }}
+                      >
+                        <MovieFilter />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
                 </Box>
               </Box>
             </Box>
@@ -607,9 +753,9 @@ const MovieDetails = () => {
                   {movie.cast && movie.cast.length > 0 ? (
                     <Grid container spacing={2}>
                       {movie.cast.map((person) => (
-                        <Grid item xs={6} sm={4} md={3} key={person.id}>
-                          <Card sx={{ 
-                            height: '100%', 
+                        <Grid item xs={6} sm={4} md={3} key={person.id}>                          <Card sx={{ 
+                            width: '100%',
+                            height: 280, 
                             transition: 'transform 0.2s',
                             '&:hover': { transform: 'translateY(-5px)' }
                           }}>
@@ -621,12 +767,30 @@ const MovieDetails = () => {
                                 : 'https://via.placeholder.com/300x450?text=No+Image'
                               }
                               alt={person.name}
-                            />
-                            <CardContent>
-                              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                              sx={{ objectFit: 'cover', width: '100%' }}
+                            />                            <CardContent sx={{ height: 100, overflow: 'hidden' }}>
+                              <Typography 
+                                variant="subtitle1" 
+                                sx={{ 
+                                  fontWeight: 600,
+                                  display: '-webkit-box',
+                                  overflow: 'hidden',
+                                  WebkitBoxOrient: 'vertical',
+                                  WebkitLineClamp: 1
+                                }}
+                              >
                                 {person.name}
                               </Typography>
-                              <Typography variant="body2" color="text.secondary">
+                              <Typography 
+                                variant="body2" 
+                                color="text.secondary"
+                                sx={{
+                                  display: '-webkit-box',
+                                  overflow: 'hidden',
+                                  WebkitBoxOrient: 'vertical',
+                                  WebkitLineClamp: 2
+                                }}
+                              >
                                 {person.character}
                               </Typography>
                             </CardContent>
@@ -649,9 +813,9 @@ const MovieDetails = () => {
                   {movie.similar && movie.similar.length > 0 ? (
                     <Grid container spacing={2}>
                       {movie.similar.slice(0, 8).map((similarMovie) => (
-                        <Grid item xs={6} sm={4} md={3} key={similarMovie.id}>
-                          <Card className="movie-card" sx={{ 
-                            height: '100%',
+                        <Grid item xs={6} sm={4} md={3} key={similarMovie.id}>                          <Card className="movie-card" sx={{ 
+                            width: '100%',
+                            height: 300,
                             transition: 'all 0.3s ease',
                             '&:hover': { 
                               transform: 'translateY(-5px)',
@@ -664,9 +828,20 @@ const MovieDetails = () => {
                                 height="200"
                                 image={similarMovie.poster || 'https://via.placeholder.com/300x450?text=No+Image'}
                                 alt={similarMovie.title}
-                              />
-                              <CardContent>
-                                <Typography variant="subtitle1" noWrap sx={{ fontWeight: 600 }}>
+                                sx={{ objectFit: 'cover', width: '100%' }}
+                              />                              <CardContent sx={{ height: 100, overflow: 'hidden' }}>
+                                <Typography 
+                                  variant="subtitle1" 
+                                  sx={{ 
+                                    fontWeight: 600,
+                                    display: '-webkit-box',
+                                    overflow: 'hidden',
+                                    WebkitBoxOrient: 'vertical',
+                                    WebkitLineClamp: 2,
+                                    lineHeight: 1.2,
+                                    minHeight: '2.4rem'
+                                  }}
+                                >
                                   {similarMovie.title}
                                 </Typography>
                                 <Box display="flex" alignItems="center">
@@ -690,6 +865,126 @@ const MovieDetails = () => {
                     <Typography>No similar movies found.</Typography>
                   )}
                 </Paper>
+              )}
+            </Box>
+            {/* Reviews Section */}
+            <Box sx={{ mt: 6 }}>
+              <Typography variant="h5" fontWeight={800} mb={2} sx={{ fontFamily: 'Montserrat, sans-serif' }}>
+                Reviews
+              </Typography>
+              {/* Leave a Review */}
+              {currentUser ? (
+                <Paper elevation={2} sx={{ p: 3, mb: 3, borderRadius: 3, bgcolor: 'background.paper', boxShadow: 2 }}>
+                  <Typography variant="subtitle1" fontWeight={700} mb={1}>
+                    {userReview ? 'Edit Your Review' : 'Leave a Review'}
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                    <Rating
+                      value={reviewRating}
+                      precision={0.5}
+                      onChange={(_, value) => setReviewRating(value)}
+                    />
+                    <Typography variant="body2" color="text.secondary">
+                      {reviewRating ? `${reviewRating.toFixed(1)} / 5` : 'No rating'}
+                    </Typography>
+                  </Box>
+                  <TextField
+                    label="Your review"
+                    value={reviewText}
+                    onChange={e => setReviewText(e.target.value)}
+                    fullWidth
+                    multiline
+                    minRows={2}
+                    maxRows={6}
+                    variant="outlined"
+                    sx={{ mb: 2 }}
+                  />
+                  <Box sx={{ display: 'flex', gap: 2 }}>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      disabled={submittingReview || !reviewText.trim() || !reviewRating}
+                      onClick={async () => {
+                        setSubmittingReview(true);
+                        try {
+                          await postReview(id, reviewRating, reviewText);
+                          setSnackbar({ open: true, message: 'Review submitted!', severity: 'success' });
+                          // Refresh reviews
+                          const data = await getMovieReviews(id);
+                          setReviews(data);
+                          const myReview = data.find(r => r.user._id === currentUser.id);
+                          setUserReview(myReview || null);
+                        } catch (err) {
+                          setSnackbar({ open: true, message: 'Error submitting review', severity: 'error' });
+                        } finally {
+                          setSubmittingReview(false);
+                        }
+                      }}
+                    >
+                      {userReview ? 'Update Review' : 'Submit Review'}
+                    </Button>
+                    {userReview && (
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        disabled={submittingReview}
+                        onClick={async () => {
+                          setSubmittingReview(true);
+                          try {
+                            await deleteReview(userReview._id);
+                            setSnackbar({ open: true, message: 'Review deleted', severity: 'success' });
+                            setReviewText('');
+                            setReviewRating(0);
+                            setUserReview(null);
+                            // Refresh reviews
+                            const data = await getMovieReviews(id);
+                            setReviews(data);
+                          } catch (err) {
+                            setSnackbar({ open: true, message: 'Error deleting review', severity: 'error' });
+                          } finally {
+                            setSubmittingReview(false);
+                          }
+                        }}
+                      >
+                        Delete Review
+                      </Button>
+                    )}
+                  </Box>
+                </Paper>
+              ) : (
+                <Alert severity="info" sx={{ mb: 3 }}>
+                  <Typography variant="body2">Please log in to leave a review.</Typography>
+                </Alert>
+              )}
+              {/* List of Reviews */}
+              {reviews.length === 0 ? (
+                <Typography variant="body2" color="text.secondary">No reviews yet. Be the first to review!</Typography>
+              ) : (
+                <List>
+                  {reviews.map((review) => (
+                    <ListItem alignItems="flex-start" key={review._id} sx={{ mb: 2, borderRadius: 2, bgcolor: 'background.default', boxShadow: 1 }}>
+                      <ListItemAvatar>
+                        <Avatar src={review.user.avatar || undefined} alt={review.user.username} />
+                      </ListItemAvatar>
+                      <ListItemText
+                        primary={
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography fontWeight={700}>{review.user.username}</Typography>
+                            <Rating value={review.rating} precision={0.5} size="small" readOnly sx={{ ml: 1 }} />
+                            <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                              {new Date(review.createdAt).toLocaleDateString()}
+                            </Typography>
+                          </Box>
+                        }
+                        secondary={
+                          <Typography variant="body2" color="text.primary" sx={{ whiteSpace: 'pre-line' }}>
+                            {review.text}
+                          </Typography>
+                        }
+                      />
+                    </ListItem>
+                  ))}
+                </List>
               )}
             </Box>
           </Grid>
@@ -788,6 +1083,52 @@ const MovieDetails = () => {
           </Grid>
         </Grid>
       </Container>
+
+      {/* Collections Dialog */}
+      <Dialog open={collectionsDialogOpen} onClose={handleCloseCollectionsDialog} maxWidth="xs" fullWidth>
+        <DialogTitle>My Collections</DialogTitle>
+        <DialogContent>
+          {collectionsLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <List>
+              {collections.length === 0 && (
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  No collections yet. Create one below!
+                </Typography>
+              )}
+              {collections.map((col) => (
+                <ListItem key={col._id} secondaryAction={
+                  <Button size="small" variant="contained" onClick={() => handleAddToCollection(col._id)}>
+                    Add
+                  </Button>
+                }>
+                  <ListItemText primary={col.name} />
+                </ListItem>
+              ))}
+            </List>
+          )}
+          <Divider sx={{ my: 2 }} />
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <TextField
+              label="New Collection"
+              value={newCollectionName}
+              onChange={e => setNewCollectionName(e.target.value)}
+              fullWidth
+              size="small"
+              disabled={creatingCollection}
+            />
+            <Button onClick={handleCreateCollection} variant="outlined" disabled={creatingCollection || !newCollectionName.trim()}>
+              {creatingCollection ? <CircularProgress size={20} /> : 'Create'}
+            </Button>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseCollectionsDialog}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

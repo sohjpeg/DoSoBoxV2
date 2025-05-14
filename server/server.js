@@ -5,6 +5,8 @@ const cors = require('cors');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const favoritesRoutes = require('./routes/favorites');
+const collectionsRoutes = require('./routes/collections');
+const reviewsRoutes = require('./routes/reviews');
 
 // Initialize Express app
 const app = express();
@@ -25,6 +27,8 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/favorites', favoritesRoutes);
+app.use('/api/collections', collectionsRoutes);
+app.use('/api/reviews', reviewsRoutes);
 
 // Basic route for testing
 app.get('/', (req, res) => {

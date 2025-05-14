@@ -10,6 +10,7 @@ import MovieDetails from './pages/MovieDetails';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
+import CollectionsPage from './pages/CollectionsPage';
 import './animations.css';
 import './App.css';
 
@@ -193,6 +194,7 @@ function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/profile/:username" element={<Profile />} />
+                <Route path="/collections" element={<CollectionsPage />} />
                 {/* Add additional routes as needed */}
               </Routes>
             </main>
