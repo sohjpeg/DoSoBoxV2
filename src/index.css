@@ -1,5 +1,5 @@
-/* Import Poppins font from Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+/* Import Poppins font from Google Fonts with more weights */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
 
 /* Base styles */
 :root {
@@ -9,68 +9,199 @@
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  background-color: #121212;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  
+  /* Custom properties */
+  --gradient-primary: linear-gradient(90deg, #ff5f6d 0%, #ffc371 100%);
+  --gradient-dark: linear-gradient(135deg, #181c2b 0%, #232946 100%);
+  --card-shadow: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
+  --card-shadow-hover: 0 15px 30px rgba(0, 0, 0, 0.3);
+  --card-radius: 16px;
+  --transition-ease: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+}
+
+/* Better anchor styling */
 a {
   font-weight: 500;
-  color: #646cff;
+  color: #ff5f6d;
   text-decoration: inherit;
-}
-a:hover {
-  opacity: 0.8;
+  transition: all 0.2s ease;
 }
 
+a:hover {
+  opacity: 0.85;
+  color: #ffc371;
+}
+
+/* Better body styling */
 body {
   margin: 0;
   padding: 0;
   min-width: 100vw;
   min-height: 100vh;
   width: 100vw;
-  background: var(--mui-palette-background-default, #242424);
-  /* Remove forced centering */
+  background: var(--mui-palette-background-default, #121212);
+  overflow-x: hidden;
+  transition: background-color 0.3s ease;
 }
 
+/* Custom scrollbar for webkit browsers */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 95, 109, 0.3);
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 95, 109, 0.5);
+}
+
+/* App root styling */
 #root {
   min-height: 100vh;
   width: 100vw;
   display: flex;
   flex-direction: column;
   background: inherit;
-  /* Remove forced max-width and padding that centers content */
   max-width: none;
   margin: 0;
   padding: 0;
   text-align: initial;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+/* Dark mode specific adjustments */
+.dark-mode {
+  --card-shadow: 0 10px 20px rgba(0, 0, 0, 0.3), 0 6px 6px rgba(0, 0, 0, 0.25);
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
+/* Light mode specific adjustments */
+.light-mode {
+  --card-shadow: 0 8px 16px rgba(0, 0, 0, 0.1), 0 4px 4px rgba(0, 0, 0, 0.08);
 }
-button:hover {
-  border-color: #646cff;
+
+/* Common utility classes */
+.text-gradient {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+
+.bg-gradient {
+  background: var(--gradient-primary);
+}
+
+.backdrop-blur {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Section animation with delay based on section order */
+.section-container {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.section-container:nth-child(1) {
+  animation-delay: 0.1s;
+}
+
+.section-container:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.section-container:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.section-container:nth-child(4) {
+  animation-delay: 0.4s;
+}
+
+/* Loading animation */
+@keyframes pulse-loading {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.95);
+    opacity: 0.7;
+  }
+}
+
+.loading-pulse {
+  animation: pulse-loading 1.5s infinite ease-in-out;
+}
+
+/* Page transitions */
+.page-transition {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Improve form elements */
+input, textarea, select {
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Mobile optimizations */
+@media (max-width: 600px) {
+  :root {
+    --card-radius: 12px;
+  }
+}
+
+/* Button hover effect */
+.button-hover-effect {
+  position: relative;
+  overflow: hidden;
+  transform: translate3d(0, 0, 0);
+}
+
+.button-hover-effect::after {
+  content: "";
+  display: block;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  background-image: radial-gradient(circle, #fff 10%, transparent 10.01%);
+  background-repeat: no-repeat;
+  background-position: 50%;
+  transform: scale(10, 10);
+  opacity: 0;
+  transition: transform 0.5s, opacity 1s;
+}
+
+.button-hover-effect:active::after {
+  transform: scale(0, 0);
+  opacity: 0.3;
+  transition: 0s;
 }
 
 /* Utility class to make images responsive */

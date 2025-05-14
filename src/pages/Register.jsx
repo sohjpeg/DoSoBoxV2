@@ -108,9 +108,8 @@ const Register = () => {
 
   const toggleShowPassword = () => {
     setShowPassword(!showPassword);
-  };
-  return (
-    <Container maxWidth="sm" className="fade-in" sx={{ py: 8 }}>
+  };  return (
+    <Container maxWidth="xs" className="fade-in" sx={{ py: 8 }}>
       <Box 
         sx={{ 
           display: 'flex',
@@ -145,16 +144,17 @@ const Register = () => {
         <Typography variant="body2" color="text.secondary">
           Your personal movie database
         </Typography>
-      </Box>
-
-      <Paper 
+      </Box>      <Paper 
         elevation={3} 
         sx={{ 
-          p: { xs: 3, sm: 5 }, 
+          p: { xs: 3, sm: 4 }, 
           display: 'flex', 
           flexDirection: 'column', 
           alignItems: 'center',
           borderRadius: 4,
+          width: '100%',
+          maxWidth: '400px',
+          mx: 'auto',
           backgroundImage: 'linear-gradient(to bottom, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 100%)',
           backdropFilter: 'blur(20px)',
           boxShadow: theme.palette.mode === 'dark' 

@@ -6,7 +6,6 @@ import {
   Typography, 
   Button,
   IconButton, 
-  InputBase, 
   Avatar,
   Box,
   Menu,
@@ -24,7 +23,6 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import { 
-  Search as SearchIcon, 
   Menu as MenuIcon, 
   AccountCircle,
   Logout,
@@ -40,82 +38,41 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '@mui/material/styles';
 
-// Custom styled search field
-const Search = styled('div')(({ theme }) => ({
-  position: 'relative',
-  borderRadius: theme.shape.borderRadius,
-  backgroundColor: alpha(theme.palette.common.white, 0.15),
-  '&:hover': {
-    backgroundColor: alpha(theme.palette.common.white, 0.25),
-  },
-  marginRight: theme.spacing(2),
-  marginLeft: 0,
-  width: '100%',
-  [theme.breakpoints.up('sm')]: {
-    marginLeft: theme.spacing(3),
-    width: 'auto',
-  },
-}));
-
-const SearchIconWrapper = styled('div')(({ theme }) => ({
-  padding: theme.spacing(0, 2),
-  height: '100%',
-  position: 'absolute',
-  pointerEvents: 'none',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-}));
-
-const StyledInputBase = styled(InputBase)(({ theme }) => ({
-  color: 'inherit',
-  width: '100%',
-  '& .MuiInputBase-input': {
-    padding: theme.spacing(1, 1, 1, 0),
-    paddingLeft: `calc(1em + ${theme.spacing(4)})`,
-    transition: theme.transitions.create('width'),
-    width: '100%',
-    [theme.breakpoints.up('md')]: {
-      width: '20ch',
-      '&:focus': {
-        width: '30ch',
-      },
-    },
-  },
-}));
-
 const StyledAppBar = styled(AppBar)(({ theme }) => ({
-  backgroundColor: theme.palette.mode === 'dark' 
-    ? alpha(theme.palette.background.paper, 0.95)
-    : alpha(theme.palette.background.paper, 0.95),
+  backgroundColor: alpha(theme.palette.background.paper, 0.8),
   backgroundImage: 'none',
-  backdropFilter: 'blur(8px)',
+  backdropFilter: 'blur(10px)',
   borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
   color: theme.palette.text.primary,
   transition: 'all 0.3s ease',
+  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
 }));
 
 const Navbar = ({ toggleThemeMode, mode }) => {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const theme = useTheme();
-  const location = useLocation();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-    const [searchQuery, setSearchQuery] = useState('');
+  const location = useLocation();  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [anchorEl, setAnchorEl] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [notificationAnchorEl, setNotificationAnchorEl] = useState(null);
-  
-  // Extract search query from URL when component mounts or URL changes
+  const [scrolled, setScrolled] = useState(false);
+
+  // Track scrolling for navbar appearance
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const searchParam = params.get('search');
-    if (searchParam) {
-      setSearchQuery(searchParam);
-    } else {
-      setSearchQuery('');
-    }
-  }, [location.search]);
+    const handleScroll = () => {
+      if (window.scrollY > 50) {
+        setScrolled(true);
+      } else {
+        setScrolled(false);
+      }
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
 
   // Handle menu opening
   const handleMenuOpen = (event) => {
@@ -141,137 +98,98 @@ const Navbar = ({ toggleThemeMode, mode }) => {
     setNotificationAnchorEl(null);
   };
 
-  // Handle logout
+    // Handle logout
   const handleLogout = () => {
-    handleMenuClose();
     logout();
+    handleMenuClose();
     navigate('/');
   };
-  // Handle search submission
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    
-    // Create query parameters
-    const params = new URLSearchParams();
-    
-    // Add search query if provided
-    if (searchQuery.trim()) {
-      params.append('search', searchQuery.trim());
-      
-      // Navigate with search query
-      navigate(`/?${params.toString()}`);
-    } else {
-      // If search is empty, just go to home without parameters
-      navigate('/');
-    }
-    
-    // Close mobile drawer if open
-    if (isMobile) {
-      setDrawerOpen(false);
-    }
-  };
 
+  // Mobile drawer content
   const mobileDrawer = (
     <Box
       sx={{ width: 280 }}
       role="presentation"
-    >        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2 }}>
-          <Typography variant="h6" color="primary" sx={{ fontWeight: 700 }}>
-            DosoBox
-          </Typography>
-          <IconButton onClick={toggleDrawer(false)}>
-            <CloseIcon />
-          </IconButton>
-        </Box>
-        <Divider />        <Box 
-          component="form" 
-          onSubmit={handleSearchSubmit}
-          sx={{ p: 2 }}
-        >
-          <Search>
-            <SearchIconWrapper>
-              <SearchIcon />
-            </SearchIconWrapper>            <StyledInputBase
-              placeholder="Search movies…"
-              inputProps={{ 'aria-label': 'search' }}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              autoComplete="off"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && searchQuery.trim()) {
-                  handleSearchSubmit(e);
-                }
-              }}
-            />
-          </Search>
-          <Button 
-            type="submit"
-            variant="contained"
-            color="primary"
-            fullWidth
-            sx={{ mt: 1, borderRadius: 2 }}
-            disabled={!searchQuery.trim()}
-          >
-            Search
-          </Button>
-        </Box>
-      <Divider />
-      <List>
-        <ListItem button component={Link} to="/" onClick={toggleDrawer(false)}>
-          <ListItemIcon>
-            <HomeIcon color="primary" />
-          </ListItemIcon>
-          <ListItemText primary="Home" />
-        </ListItem>
-      </List>
-      <Divider />
-      <List>
-        {currentUser ? (
-          <>
-            <ListItem button component={Link} to={`/profile/${currentUser.username}`} onClick={toggleDrawer(false)}>
-              <ListItemIcon>
-                <Avatar 
-                  alt={currentUser.username} 
-                  src={currentUser.avatar}
-                  sx={{ width: 24, height: 24 }}
-                />
-              </ListItemIcon>
-              <ListItemText primary="My Profile" />
-            </ListItem>
-            <ListItem button onClick={() => { handleLogout(); toggleDrawer(false)(); }}>
-              <ListItemIcon>
-                <Logout color="error" />
-              </ListItemIcon>
-              <ListItemText primary="Logout" sx={{ color: theme.palette.error.main }} />
-            </ListItem>
-          </>
-        ) : (
-          <>
-            <ListItem button component={Link} to="/login" onClick={toggleDrawer(false)}>
-              <ListItemText primary="Login" />
-            </ListItem>
-            <ListItem button component={Link} to="/register" onClick={toggleDrawer(false)}>
-              <ListItemText primary="Sign Up" />
-            </ListItem>
-          </>
-        )}
-        <ListItem button onClick={() => { toggleThemeMode(); toggleDrawer(false)(); }}>
-          <ListItemIcon>
-            {theme.palette.mode === 'dark' ? (
-              <Brightness7 />
-            ) : (
-              <Brightness4 />
-            )}
-          </ListItemIcon>
-          <ListItemText primary={theme.palette.mode === 'dark' ? 'Light Mode' : 'Dark Mode'} />
-        </ListItem>
-      </List>
+    >
+      <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main' }}>
+          DosoBox
+        </Typography>
+        <IconButton onClick={toggleDrawer(false)}>
+          <CloseIcon />
+        </IconButton>
+      </Box>
+        <Box sx={{ p: 2 }}>
+        <Divider />
+        <List>
+          <ListItem button component={Link} to="/" onClick={toggleDrawer(false)}>
+            <ListItemIcon>
+              <HomeIcon color="primary" />
+            </ListItemIcon>
+            <ListItemText primary="Home" />
+          </ListItem>
+        </List>
+        <Divider />
+        <List>
+          {currentUser ? (
+            <>
+              <ListItem button component={Link} to={`/profile/${currentUser.username}`} onClick={toggleDrawer(false)}>
+                <ListItemIcon>
+                  <Avatar 
+                    alt={currentUser.username} 
+                    src={currentUser.avatar}
+                    sx={{ width: 24, height: 24 }}
+                  />
+                </ListItemIcon>
+                <ListItemText primary="My Profile" />
+              </ListItem>
+              <ListItem button onClick={() => { handleLogout(); toggleDrawer(false)(); }}>
+                <ListItemIcon>
+                  <Logout color="error" />
+                </ListItemIcon>
+                <ListItemText primary="Logout" sx={{ color: theme.palette.error.main }} />
+              </ListItem>
+            </>
+          ) : (
+            <>
+              <ListItem button component={Link} to="/login" onClick={toggleDrawer(false)}>
+                <ListItemText primary="Login" />
+              </ListItem>
+              <ListItem button component={Link} to="/register" onClick={toggleDrawer(false)}>
+                <ListItemText primary="Sign Up" />
+              </ListItem>
+            </>
+          )}
+          <ListItem button onClick={() => { toggleThemeMode(); toggleDrawer(false)(); }}>
+            <ListItemIcon>
+              {theme.palette.mode === 'dark' ? (
+                <Brightness7 />
+              ) : (
+                <Brightness4 />
+              )}
+            </ListItemIcon>
+            <ListItemText primary={theme.palette.mode === 'dark' ? 'Light Mode' : 'Dark Mode'} />
+          </ListItem>
+        </List>
+      </Box>
     </Box>
   );
 
   return (
     <>
-      <StyledAppBar position="sticky" elevation={0}>
+      <StyledAppBar 
+        position="sticky" 
+        elevation={0}
+        sx={{
+          py: 0.5,
+          backgroundColor: scrolled 
+            ? alpha(theme.palette.background.paper, 0.9)
+            : alpha(theme.palette.background.paper, 0.6),
+          boxShadow: scrolled 
+            ? '0 8px 20px rgba(0, 0, 0, 0.15)'
+            : 'none',
+        }}
+      >
         <Toolbar>
           {/* Mobile menu button */}
           <IconButton
@@ -285,24 +203,48 @@ const Navbar = ({ toggleThemeMode, mode }) => {
           </IconButton>
           
           {/* Logo */}
-          <Typography
-            variant="h6"
-            component={Link}
-            to="/"
-            sx={{
-              textDecoration: 'none',
-              color: 'primary.main',
-              flexGrow: { xs: 1, sm: 0 },
-              fontWeight: 700,
-              letterSpacing: 1,
-              mr: 3
-            }}
-          >
-            DosoBox
-          </Typography>
-
-          {/* Navigation links - desktop */}
-          <Box sx={{ flexGrow: 1, display: { xs: 'none', sm: 'flex' }, alignItems: 'center', justifyContent: 'center' }}>
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center',
+            background: mode === 'dark' 
+              ? 'linear-gradient(90deg, #ff5f6d 0%, #ffc371 100%)' 
+              : 'linear-gradient(90deg, #ff5f6d 0%, #ffc371 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            fontWeight: 800,
+            letterSpacing: 1
+          }}>
+            <Typography
+              variant="h5"
+              noWrap
+              component={Link}
+              to="/"
+              sx={{
+                mr: 1,
+                fontFamily: 'Poppins, sans-serif',
+                fontWeight: 800,
+                display: { xs: 'none', sm: 'flex' }
+              }}
+            >
+              DosoBox
+            </Typography>
+            <Typography
+              variant="h6"
+              noWrap
+              component={Link}
+              to="/"
+              sx={{
+                fontFamily: 'Poppins, sans-serif',
+                fontWeight: 800,
+                display: { xs: 'flex', sm: 'none' }
+              }}
+            >
+              DosoBox
+            </Typography>
+          </Box>
+          
+          {/* Desktop nav links */}
+          <Box sx={{ display: { xs: 'none', sm: 'flex' }, ml: 1 }}>
             <Button 
               color="inherit" 
               component={Link} 
@@ -311,7 +253,21 @@ const Navbar = ({ toggleThemeMode, mode }) => {
                 mx: 0.5, 
                 borderRadius: 2,
                 transition: 'all 0.2s',
+                position: 'relative',
                 '&:hover': {
+                  backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                },
+                '&:hover::after': {
+                  width: '70%'
+                },
+                '&::after': {
+                  content: '""',
+                  position: 'absolute',
+                  bottom: 5,
+                  left: '15%',
+                  width: location.pathname === '/' ? '70%' : '0%',
+                  height: 2,
+                  transition: 'width 0.3s ease',
                   backgroundColor: alpha(theme.palette.primary.main, 0.1),
                 }
               }}
@@ -327,7 +283,21 @@ const Navbar = ({ toggleThemeMode, mode }) => {
                 mx: 0.5, 
                 borderRadius: 2,
                 transition: 'all 0.2s',
+                position: 'relative',
                 '&:hover': {
+                  backgroundColor: alpha(theme.palette.secondary.main, 0.1),
+                },
+                '&:hover::after': {
+                  width: '70%'
+                },
+                '&::after': {
+                  content: '""',
+                  position: 'absolute',
+                  bottom: 5,
+                  left: '15%',
+                  width: location.pathname === '/collections' ? '70%' : '0%',
+                  height: 2,
+                  transition: 'width 0.3s ease',
                   backgroundColor: alpha(theme.palette.secondary.main, 0.1),
                 }
               }}
@@ -335,50 +305,29 @@ const Navbar = ({ toggleThemeMode, mode }) => {
             >
               Collections
             </Button>
-          </Box>
-          {/* Centered search bar - desktop */}          <Box 
-            component="form" 
-            onSubmit={handleSearchSubmit}
+          </Box>          {/* Empty flex div to maintain spacing */}
+          <Box 
             sx={{ 
-              display: { xs: 'none', sm: 'flex' },
-              flexGrow: 1,
-              justifyContent: 'center',
-              alignItems: 'center',
-              mr: 1,
-              ml: 2
+              flexGrow: 1
             }}
-          >
-            <Search sx={{ width: '100%', maxWidth: 400 }}>
-              <SearchIconWrapper>
-                <SearchIcon />
-              </SearchIconWrapper>              <StyledInputBase
-                placeholder="Search movies…"
-                inputProps={{ 'aria-label': 'search' }}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                autoComplete="off"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && searchQuery.trim()) {
-                    handleSearchSubmit(e);
-                  }
-                }}
-              />
-            </Search>
-            <Button 
-              type="submit"
-              variant="contained"
-              color="primary"
-              size="small"
-              sx={{ ml: 1, borderRadius: 2 }}
-              disabled={!searchQuery.trim()}
-            >
-              Search
-            </Button>
-          </Box>
+          ></Box>
 
           {/* Theme toggle */}
           <Tooltip title={mode === 'dark' ? 'Light mode' : 'Dark mode'}>
-            <IconButton color="inherit" onClick={toggleThemeMode} sx={{ ml: 1 }}>
+            <IconButton 
+              color="inherit" 
+              onClick={toggleThemeMode} 
+              sx={{ 
+                ml: 1, 
+                border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                background: alpha(theme.palette.background.paper, 0.4),
+                backdropFilter: 'blur(5px)',
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  background: alpha(theme.palette.background.paper, 0.6),
+                }
+              }}
+            >
               {mode === 'dark' ? <Brightness7 /> : <Brightness4 />}
             </IconButton>
           </Tooltip>
@@ -392,7 +341,16 @@ const Navbar = ({ toggleThemeMode, mode }) => {
                   color="inherit" 
                   onClick={handleNotificationsOpen}
                   size="medium"
-                  sx={{ ml: 1 }}
+                  sx={{ 
+                    ml: 1,
+                    border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                    background: alpha(theme.palette.background.paper, 0.4),
+                    backdropFilter: 'blur(5px)',
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      background: alpha(theme.palette.background.paper, 0.6),
+                    }
+                  }}
                 >
                   <Badge badgeContent={3} color="error">
                     <Notifications />
@@ -407,25 +365,18 @@ const Navbar = ({ toggleThemeMode, mode }) => {
                 <Tooltip title="Account settings">
                   <IconButton
                     onClick={handleMenuOpen}
-                    size="small"
-                    aria-controls={Boolean(anchorEl) ? 'account-menu' : undefined}
-                    aria-haspopup="true"
-                    aria-expanded={Boolean(anchorEl) ? 'true' : undefined}
-                    sx={{ ml: 1 }}
+                    size="medium"
+                    sx={{ 
+                      ml: 1,
+                      border: `2px solid ${theme.palette.primary.main}`,
+                      p: 0.5
+                    }}
                   >
-                    {currentUser.avatar ? (
-                      <Avatar 
-                        alt={currentUser.username} 
-                        src={currentUser.avatar}
-                        sx={{ 
-                          width: 32, 
-                          height: 32,
-                          border: `2px solid ${theme.palette.primary.main}`
-                        }}
-                      />
-                    ) : (
-                      <AccountCircle fontSize="large" />
-                    )}
+                    <Avatar 
+                      src={currentUser.avatar} 
+                      alt={currentUser.username}
+                      sx={{ width: 32, height: 32 }} 
+                    />
                   </IconButton>
                 </Tooltip>
                 <Menu
@@ -444,6 +395,9 @@ const Navbar = ({ toggleThemeMode, mode }) => {
                       overflow: 'visible',
                       filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.15))',
                       minWidth: 180,
+                      backgroundImage: 'none',
+                      backdropFilter: 'blur(10px)',
+                      bgcolor: alpha(theme.palette.background.paper, 0.9),
                       '& .MuiMenuItem-root': {
                         borderRadius: 1,
                         mb: 0.5,
@@ -461,12 +415,14 @@ const Navbar = ({ toggleThemeMode, mode }) => {
                   </MenuItem>
                   <Divider sx={{ my: 1 }} />
                   <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
-                    <Logout fontSize="small" sx={{ mr: 1.5 }} />
+                    <ListItemIcon>
+                      <Logout fontSize="small" color="error" />
+                    </ListItemIcon>
                     Logout
                   </MenuItem>
                 </Menu>
                 
-                {/* Notifications Menu */}
+                {/* Notifications menu */}
                 <Menu
                   anchorEl={notificationAnchorEl}
                   id="notifications-menu"
@@ -479,14 +435,18 @@ const Navbar = ({ toggleThemeMode, mode }) => {
                     sx: {
                       borderRadius: 2,
                       mt: 1,
-                      p: 1,
-                      width: 320,
-                      maxHeight: 420,
+                      overflow: 'visible',
+                      filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.15))',
+                      minWidth: 280,
+                      maxWidth: 320,
+                      backgroundImage: 'none',
+                      backdropFilter: 'blur(10px)',
+                      bgcolor: alpha(theme.palette.background.paper, 0.9),
                     },
                   }}
                 >
-                  <Typography variant="subtitle2" sx={{ px: 2, py: 1, fontWeight: 600 }}>
-                    Notifications
+                  <Typography variant="subtitle2" sx={{ py: 1, px: 2, fontWeight: 600 }}>
+                    Recent Notifications
                   </Typography>
                   <Divider />
                   <MenuItem onClick={handleNotificationsClose}>
@@ -526,7 +486,15 @@ const Navbar = ({ toggleThemeMode, mode }) => {
                   component={Link} 
                   to="/login"
                   color="inherit"
-                  sx={{ ml: 1 }}
+                  sx={{ 
+                    ml: 1,
+                    borderRadius: '50px',
+                    px: 2,
+                    border: `1px solid ${alpha(theme.palette.divider, 0.2)}`,
+                    '&:hover': {
+                      backgroundColor: alpha(theme.palette.common.white, 0.1),
+                    }
+                  }}
                 >
                   Login
                 </Button>
@@ -535,7 +503,16 @@ const Navbar = ({ toggleThemeMode, mode }) => {
                   to="/register"
                   variant="contained" 
                   color="primary"
-                  sx={{ ml: 1 }}
+                  sx={{ 
+                    ml: 1,
+                    borderRadius: '50px',
+                    px: 2,
+                    fontWeight: 600,
+                    boxShadow: 'none',
+                    '&:hover': {
+                      boxShadow: '0 4px 12px rgba(255, 95, 109, 0.3)'
+                    }
+                  }}
                 >
                   Sign Up
                 </Button>
