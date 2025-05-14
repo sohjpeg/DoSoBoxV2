@@ -4,6 +4,7 @@ const API_URL = '/api/reviews';
 
 export const postReview = async (movieId, rating, text) => {
   const res = await axios.post(`${API_URL}/${movieId}`, { rating, text });
+  console.log('Server response for review post:', res.data);
   return res.data;
 };
 
@@ -18,6 +19,7 @@ export const getUserReviews = async (userId) => {
 };
 
 export const deleteReview = async (reviewId) => {
+  console.log('Deleting review with ID:', reviewId);
   const res = await axios.delete(`${API_URL}/${reviewId}`);
   return res.data;
 };

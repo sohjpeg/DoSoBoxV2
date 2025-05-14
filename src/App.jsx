@@ -187,15 +187,13 @@ function App() {
           }}>
             <Navbar toggleThemeMode={toggleThemeMode} mode={mode} />
             
-            <main style={{ flexGrow: 1 }}>
-              <Routes>
+            <main style={{ flexGrow: 1 }}>              <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/movie/:id" element={<MovieDetails />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/profile/:username" element={<Profile />} />
                 <Route path="/collections" element={<CollectionsPage />} />
-                {/* Add additional routes as needed */}
               </Routes>
             </main>
             

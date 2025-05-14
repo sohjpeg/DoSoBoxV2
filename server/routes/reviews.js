@@ -14,12 +14,14 @@ router.post('/:movieId', protect, async (req, res) => {
     let movie = await Movie.findOne({ tmdbId: req.params.movieId });
     if (!movie) {
       return res.status(404).json({ message: 'Movie not found' });
-    }
-    const review = await Review.findOneAndUpdate(
+    }    let review = await Review.findOneAndUpdate(
       { user: req.user.id, movie: movie._id },
       { rating, text, createdAt: new Date() },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
+    
+    // Populate the user field to match the format of the reviews endpoint
+    review = await Review.findById(review._id).populate('user', 'username avatar');
     res.status(201).json(review);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
@@ -56,7 +58,7 @@ router.delete('/:reviewId', protect, async (req, res) => {
     if (review.user.toString() !== req.user.id) {
       return res.status(403).json({ message: 'Not authorized' });
     }
-    await review.remove();
+    await Review.deleteOne({ _id: req.params.reviewId });
     res.json({ message: 'Review deleted' });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });

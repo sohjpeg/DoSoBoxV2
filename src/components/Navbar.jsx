@@ -29,8 +29,6 @@ import {
   Brightness4,
   Brightness7,
   Home as HomeIcon,
-  TrendingUp,
-  LocalMovies,
   Notifications,
   Close as CloseIcon,
   MovieFilter
@@ -448,27 +446,10 @@ const Navbar = ({ toggleThemeMode, mode }) => {
                   <Typography variant="subtitle2" sx={{ py: 1, px: 2, fontWeight: 600 }}>
                     Recent Notifications
                   </Typography>
-                  <Divider />
-                  <MenuItem onClick={handleNotificationsClose}>
+                  <Divider />                  <MenuItem onClick={handleNotificationsClose}>
                     <ListItemText 
-                      primary="New movie recommendation for you" 
-                      secondary="Based on your watch history"
-                      primaryTypographyProps={{ variant: 'body2' }}
-                      secondaryTypographyProps={{ variant: 'caption' }}
-                    />
-                  </MenuItem>
-                  <MenuItem onClick={handleNotificationsClose}>
-                    <ListItemText 
-                      primary="Your review was liked" 
-                      secondary="John Doe liked your review of Inception"
-                      primaryTypographyProps={{ variant: 'body2' }}
-                      secondaryTypographyProps={{ variant: 'caption' }}
-                    />
-                  </MenuItem>
-                  <MenuItem onClick={handleNotificationsClose}>
-                    <ListItemText 
-                      primary="New comment on your review" 
-                      secondary="Jane Smith commented on your review"
+                      primary="No new notifications" 
+                      secondary="Check back later"
                       primaryTypographyProps={{ variant: 'body2' }}
                       secondaryTypographyProps={{ variant: 'caption' }}
                     />

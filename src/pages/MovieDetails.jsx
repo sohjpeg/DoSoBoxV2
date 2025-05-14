@@ -38,8 +38,8 @@ import {
   Favorite, 
   FavoriteBorder, 
   PlayArrow, 
-  AccessTime, 
   CalendarToday, 
+  AccessTime,
   Language,
   Share,
   Star,
@@ -264,30 +264,48 @@ const MovieDetails = () => {
     } catch (err) {
       setSnackbar({ open: true, message: 'Error adding to collection', severity: 'error' });
     }
-  };
-
-  const handleReviewSubmit = async () => {
+  };  const handleReviewSubmit = async () => {
     if (!reviewText.trim() || !reviewRating) return;
     setSubmittingReview(true);
     try {
-      await postReview(id, reviewRating, reviewText.trim());
+      const reviewResponse = await postReview(id, reviewRating, reviewText.trim());
       setSnackbar({ open: true, message: 'Review submitted!', severity: 'success' });
+      
+      // Use the returned review data directly from the server response
+      if (reviewResponse && reviewResponse._id) {
+        setUserReview(reviewResponse);
+      } else {
+        console.warn('Review response missing ID:', reviewResponse);
+        
+        // Fallback to fetching all reviews if the response is invalid
+        const data = await getMovieReviews(id);
+        setReviews(data);
+        
+        if (currentUser) {
+          const myReview = data.find(r => r.user._id === currentUser.id);
+          setUserReview(myReview || null);
+        }
+      }
+      
       setReviewText('');
       setReviewRating(0);
-      setUserReview({ rating: reviewRating, text: reviewText, user: { _id: currentUser.id, username: currentUser.username, avatar: currentUser.avatar } });
-      // Refresh reviews
-      const data = await getMovieReviews(id);
-      setReviews(data);
     } catch (err) {
       setSnackbar({ open: true, message: 'Error submitting review', severity: 'error' });
     } finally {
       setSubmittingReview(false);
     }
   };
-
   const handleDeleteReview = async () => {
     if (!userReview) return;
     try {
+      console.log('Attempting to delete review:', userReview);
+      
+      if (!userReview._id) {
+        console.error('Review ID is missing!');
+        setSnackbar({ open: true, message: 'Error: Review ID is missing', severity: 'error' });
+        return;
+      }
+      
       await deleteReview(userReview._id);
       setSnackbar({ open: true, message: 'Review deleted', severity: 'success' });
       setUserReview(null);
@@ -923,14 +941,21 @@ const MovieDetails = () => {
                     >
                       {userReview ? 'Update Review' : 'Submit Review'}
                     </Button>
-                    {userReview && (
-                      <Button
+                    {userReview && (                      <Button
                         variant="outlined"
                         color="error"
                         disabled={submittingReview}
                         onClick={async () => {
                           setSubmittingReview(true);
                           try {
+                            console.log('Attempting to delete review with ID:', userReview._id);
+                            
+                            if (!userReview._id) {
+                              console.error('Review ID is missing!');
+                              setSnackbar({ open: true, message: 'Error: Review ID is missing', severity: 'error' });
+                              return;
+                            }
+                            
                             await deleteReview(userReview._id);
                             setSnackbar({ open: true, message: 'Review deleted', severity: 'success' });
                             setReviewText('');
@@ -940,6 +965,7 @@ const MovieDetails = () => {
                             const data = await getMovieReviews(id);
                             setReviews(data);
                           } catch (err) {
+                            console.error('Error deleting review:', err);
                             setSnackbar({ open: true, message: 'Error deleting review', severity: 'error' });
                           } finally {
                             setSubmittingReview(false);

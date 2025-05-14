@@ -16,7 +16,11 @@ export const formatMovie = (movie) => {
     releaseDate: movie.release_date,
     voteAverage: movie.vote_average,
     voteCount: movie.vote_count,
-    genres: movie.genres || []
+    genres: movie.genres || [],
+    runtime: movie.runtime,
+    budget: movie.budget,
+    revenue: movie.revenue,
+    original_language: movie.original_language
   };
 };
 
@@ -89,21 +93,7 @@ export const getMovieDetails = async (movieId) => {
   }
 };
 
-// Get movie genres list
-export const getGenres = async () => {
-  try {
-    const response = await axios.get(`${BASE_URL}/genre/movie/list`, {
-      params: {
-        api_key: TMDB_API_KEY
-      }
-    });
-
-    return response.data.genres;
-  } catch (error) {
-    console.error('Error fetching genres:', error);
-    throw error;
-  }
-};
+// Unused function removed
 
 // Get popular movies
 export const getPopularMovies = async (page = 1) => {

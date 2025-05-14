@@ -1,54 +1,8 @@
 /* Modern UI enhancements */
 
-/* Glassmorphism effect */
-.glass-effect {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border-radius: 10px; /* More subtle corners */
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08); /* Lighter shadow */
-}
+/* Removed unused glassmorphism effect */
 
-/* Gradient text */
-.gradient-text {
-  background: linear-gradient(90deg, #ff5f6d, #ffc371);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  display: inline-block;
-}
-
-/* Gradient borders */
-.gradient-border {
-  position: relative;
-  border-radius: 10px; /* More subtle corners */
-  overflow: hidden;
-}
-
-.gradient-border::before {
-  content: '';
-  position: absolute;
-  top: -2px;
-  left: -2px;
-  right: -2px;
-  bottom: -2px;
-  background: linear-gradient(45deg, #ff5f6d, #ffc371, #ff5f6d);
-  z-index: -1;
-  animation: animatedGradient 3s ease-in-out infinite;
-  border-radius: 12px;
-}
-
-@keyframes animatedGradient {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
+/* Removed unused gradient styles */
 
 /* Neon glow effects */
 .neon-glow {
